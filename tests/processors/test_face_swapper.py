@@ -32,12 +32,17 @@ def test_face_analysis():
     assert face.sex == 'F'
 
 
-def test_no_face_found(capsys):
+def test_no_face_found(caplog):
+    import logging
+    # Устанавливаем нужный уровень логирования
+    caplog.set_level(logging.WARNING)
     face = FaceSwapper(parameters=Parameters(f'--source-path="{no_face_jpg}" --target-path="{target_png}" --output-path="{tmp_dir}"').parameters).source_face
     assert face is None
-    captured: str = capsys.readouterr()
-    captured = captured.out.splitlines()[-1].strip()
-    assert captured.find(f'{Fore.BLACK}{Back.RED}FaceSwapper: There is no face found on {no_face_jpg}{Back.RESET}{Fore.RESET}') != -1
+    assert any(
+        record.levelname == 'WARNING' and
+        f"There is no face found on {no_face_jpg}" in record.message
+        for record in caplog.records
+    )
 
 
 def test_process_frame():
