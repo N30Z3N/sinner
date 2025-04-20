@@ -64,7 +64,7 @@ class Sin(Sinner):
             # self.logger.info("Server shut down")
 
     def run(self) -> None:
-        setup_logging()
+        setup_logging(handlers=self.log)
         if self.gui:
             preview = GUIForm(parameters=self.parameters)
             window = preview.show()

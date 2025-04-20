@@ -1,5 +1,7 @@
 import warnings
+from typing import List
 
+from sinner.AppLogger import HandlerType
 from sinner.utilities import suggest_max_memory
 from sinner.validators.AttributeLoader import AttributeLoader, Rules
 
@@ -8,6 +10,7 @@ warnings.filterwarnings('ignore', category=UserWarning, module='torchvision')
 
 
 class Sinner(AttributeLoader):
+    log: List[str]
 
     # the main module cannot be documented with AttributeDocumenter, because it causes a circular import
     def rules(self) -> Rules:
@@ -37,6 +40,14 @@ class Sinner(AttributeLoader):
                 'parameter': 'camera',
                 'default': False,
                 'help': 'Start a face-swapped web-camera'
+            },
+            {
+                'parameter': {'log'},
+                'attribute': 'log',
+                'default': ['console'],
+                'required': False,
+                'choices': HandlerType,
+                'help': 'The set of logging handlers'
             },
             {
                 'module_help': 'The main application'

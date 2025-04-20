@@ -1,5 +1,6 @@
 import logging
-from typing import Optional, Dict
+from logging.handlers import SysLogHandler, RotatingFileHandler, TimedRotatingFileHandler
+from typing import Optional, Dict, List, Union, Any
 
 from colorama import Fore, Back, Style
 
@@ -62,38 +63,125 @@ class ColoredFormatter(LevelBasedFormatter):
 # Создаем глобальный логгер приложения
 app_logger = logging.getLogger("sinner")
 
+# Определяем форматы для разных уровней (глобально)
+DEFAULT_FORMATS = {
+    # Подробный формат для отладки, ошибок и критических ошибок
+    logging.DEBUG: '%(module)s.%(funcName)s:%(lineno)d: %(message)s',
+    logging.ERROR: '%(module)s.%(funcName)s:%(lineno)d: %(message)s',
+    logging.CRITICAL: '%(module)s.%(funcName)s:%(lineno)d: %(message)s',
+    # Более компактный формат для info и warning
+    logging.INFO: '%(module)s: %(message)s',
+    logging.WARNING: '%(module)s: %(message)s',
+    # Формат по умолчанию
+    None: '%(module)s: %(message)s'
+}
 
-def setup_logging(level: int = logging.DEBUG, log_file: Optional[str] = None) -> None:
-    """Настройка логгера при запуске приложения"""
+# Типы обработчиков
+HandlerType: List[str] = ['stdout', 'file', 'syslog', 'rotating_file', 'timed_rotating_file']
+
+
+def add_handler(handler_type: HandlerType, level: int = logging.NOTSET, **kwargs) -> logging.Handler:  # type: ignore[no-untyped-def]
+    """
+    Добавляет обработчик указанного типа к глобальному логгеру
+    
+    :param handler_type: Тип обработчика ('stdout', 'file', 'syslog', 'rotating_file', 'timed_rotating_file')
+    :param level: Уровень логирования для обработчика
+    :param kwargs: Дополнительные параметры для обработчика
+    :return: Созданный обработчик
+    """
+    handler: Optional[logging.Handler] = None
+
+    if handler_type == 'stdout':
+        # Получение кастомных форматов или использование стандартных
+        formats = kwargs.pop('formats', DEFAULT_FORMATS)
+        handler = logging.StreamHandler()
+        handler.setFormatter(ColoredFormatter(formats))
+
+    elif handler_type == 'file':
+        filename = kwargs.pop('filename', 'sinner.log')
+        formats = kwargs.pop('formats', DEFAULT_FORMATS)
+        mode = kwargs.pop('mode', 'a')  # По умолчанию используем append режим
+        encoding = kwargs.pop('encoding', None)
+
+        handler = logging.FileHandler(filename, mode=mode, encoding=encoding)
+        handler.setFormatter(LevelBasedFormatter(formats))
+
+    elif handler_type == 'syslog':
+        address = kwargs.pop('address', '/dev/log')
+        facility = kwargs.pop('facility', SysLogHandler.LOG_USER)
+        socktype = kwargs.pop('socktype', None)
+        formats = kwargs.pop('formats', DEFAULT_FORMATS)
+
+        handler = SysLogHandler(address=address, facility=facility, socktype=socktype)
+        handler.setFormatter(LevelBasedFormatter(formats))
+
+    elif handler_type == 'rotating_file':
+        filename = kwargs.pop('filename', 'sinner.rotate.log')
+        max_bytes = kwargs.pop('maxBytes', 10 * 1024 * 1024)  # 10MB по умолчанию
+        backup_count = kwargs.pop('backupCount', 5)  # 5 файлов по умолчанию
+        formats = kwargs.pop('formats', DEFAULT_FORMATS)
+
+        handler = RotatingFileHandler(filename, maxBytes=max_bytes, backupCount=backup_count)
+        handler.setFormatter(LevelBasedFormatter(formats))
+
+    elif handler_type == 'timed_rotating_file':
+        filename = kwargs.pop('filename', 'sinner.rotate.log')
+        when = kwargs.pop('when', 'D')  # По умолчанию ежедневно
+        interval = kwargs.pop('interval', 1)
+        backup_count = kwargs.pop('backupCount', 7)  # 7 файлов по умолчанию
+        formats = kwargs.pop('formats', DEFAULT_FORMATS)
+
+        handler = TimedRotatingFileHandler(filename, when=when, interval=interval, backupCount=backup_count)
+        handler.setFormatter(LevelBasedFormatter(formats))
+
+    else:
+        raise ValueError(f"Неизвестный тип обработчика: {handler_type}")
+
+    if level != logging.NOTSET:
+        handler.setLevel(level)
+
+    app_logger.addHandler(handler)
+    return handler
+
+
+def remove_handler(handler: logging.Handler) -> None:
+    """
+    Удаляет указанный обработчик из глобального логгера
+
+    :param handler: Обработчик для удаления
+    """
+    if handler in app_logger.handlers:
+        app_logger.removeHandler(handler)
+
+
+def setup_logging(level: int = logging.DEBUG, handlers: Optional[List[str]] = None) -> None:
+    """
+    Настройка логгера при запуске приложения
+    
+    :param level: Уровень логирования для глобального логгера
+    :param handlers: Список обработчиков для настройки. 
+                    Каждый элемент может быть строкой типа обработчика
+                    или словарем с ключами 'type', 'level' и другими параметрами.
+                    Пример: ['console', {'type': 'file', 'filename': 'app.log', 'level': logging.INFO}]
+    """
     # Очистка предыдущих обработчиков
     for handler in app_logger.handlers[:]:
         app_logger.removeHandler(handler)
 
-    # Настройка логгера
+    # Настройка уровня логгера
     app_logger.setLevel(level)
 
-    # Определяем форматы для разных уровней
-    formats = {
-        # Подробный формат для отладки, ошибок и критических ошибок
-        logging.DEBUG: '%(module)s.%(funcName)s:%(lineno)d: %(message)s',
-        logging.ERROR: '%(module)s.%(funcName)s:%(lineno)d: %(message)s',
-        logging.CRITICAL: '%(module)s.%(funcName)s:%(lineno)d: %(message)s',
-        # Более компактный формат для info и warning
-        logging.INFO: '%(module)s: %(message)s',
-        logging.WARNING: '%(module)s: %(message)s',
-        # Формат по умолчанию
-        None: '%(module)s: %(message)s'
-    }
+    # Если handlers не указаны, используем консоль по умолчанию
+    if handlers is None:
+        handlers = ['stdout']
 
-    # Файловый обработчик (если указан), без цветов
-    if log_file:
-        file_handler = logging.FileHandler(log_file)
-        file_formatter = LevelBasedFormatter(formats)
-        file_handler.setFormatter(file_formatter)
-        app_logger.addHandler(file_handler)
-    else:
-        # Консольный обработчик с цветным форматтером
-        console_handler = logging.StreamHandler()
-        console_formatter = ColoredFormatter(formats)
-        console_handler.setFormatter(console_formatter)
-        app_logger.addHandler(console_handler)
+    # Добавляем все указанные обработчики
+    for handler_spec in handlers:
+        if isinstance(handler_spec, str):
+            add_handler(handler_spec)
+        elif isinstance(handler_spec, dict):
+            handler_type = handler_spec.pop('type')
+            handler_level = handler_spec.pop('level', logging.NOTSET)
+            add_handler(handler_type, handler_level, **handler_spec)
+        else:
+            raise ValueError(f"Неверный формат спецификации обработчика: {handler_spec}")
