@@ -15,8 +15,6 @@ from sinner.utilities import conditional_download, get_app_dir, is_float
 
 
 class FaceEnhancer(BaseFrameProcessor):
-    emoji: str = '👍'
-
     thread_semaphore = threading.Semaphore()
     thread_lock = threading.Lock()
 

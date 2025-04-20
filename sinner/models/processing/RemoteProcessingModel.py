@@ -5,6 +5,7 @@ from argparse import Namespace
 from tkinter import IntVar
 from typing import Callable, Any, Optional
 
+from sinner.AppLogger import app_logger
 from sinner.gui.controls.FramePlayer.PygameFramePlayer import PygameFramePlayer
 from sinner.gui.controls.ProgressIndicator.BaseProgressIndicator import BaseProgressIndicator
 from sinner.server.FrameProcessingClient import FrameProcessingClient
@@ -15,13 +16,11 @@ from sinner.models.FrameTimeLine import FrameTimeLine
 from sinner.models.MediaMetaData import MediaMetaData
 from sinner.models.audio.BaseAudioBackend import BaseAudioBackend
 from sinner.models.processing.ProcessingModelInterface import ProcessingModelInterface, PROCESSED, EXTRACTED
-from sinner.models.status.StatusMixin import StatusMixin
-from sinner.models.status.Mood import Mood
 from sinner.utilities import normalize_path, seconds_to_hmsms, list_class_descendants, resolve_relative_path, suggest_temp_dir
 from sinner.validators.AttributeLoader import Rules, AttributeLoader
 
 
-class RemoteProcessingModel(AttributeLoader, StatusMixin, ProcessingModelInterface):
+class RemoteProcessingModel(AttributeLoader, ProcessingModelInterface):
     """
     GUI model that uses remote processing.
     """
@@ -139,7 +138,7 @@ class RemoteProcessingModel(AttributeLoader, StatusMixin, ProcessingModelInterfa
 
         # Initialize event flags
         self._event_playback = Event()
-        self.update_status("Distributed GUI model initialized")
+        app_logger.info("Distributed GUI model initialized")
 
     def reload_parameters(self) -> None:
         """Reload parameters and update components."""
@@ -303,7 +302,7 @@ class RemoteProcessingModel(AttributeLoader, StatusMixin, ProcessingModelInterfa
             try:
                 preview_frame = self.ProcessingClient.get_frame(frame_number)
             except Exception as exception:
-                self.update_status(message=str(exception), mood=Mood.BAD)
+                app_logger.exception(exception)
                 preview_frame = None
         else:
             # Check if frame is already in timeline
@@ -312,7 +311,7 @@ class RemoteProcessingModel(AttributeLoader, StatusMixin, ProcessingModelInterfa
                 if self.ProcessingClient.get_processed_frame(frame_number):
                     self.TimeLine.add_frame_index(frame_number)
                 else:
-                    self.update_status(message=f"Error awaiting frame {frame_number} from the server", mood=Mood.BAD)
+                    app_logger.error(f"Error awaiting frame {frame_number} from the server")
             # Try to get the frame from timeline
             preview_frame = self.TimeLine.get_frame_by_index(frame_number)
 
@@ -465,7 +464,7 @@ class RemoteProcessingModel(AttributeLoader, StatusMixin, ProcessingModelInterfa
                 self._status("Average processing speed", f"{round(notification.fps, 4)} FPS")
                 self.set_progress_index_value(notification.index, PROCESSED)
             case _:
-                self.update_status(f"Handler is not implemented for notification {notification.type}")
+                app_logger.info(f"Handler is not implemented for notification {notification.type}")
 
     @property
     def prepare_frames(self) -> bool:

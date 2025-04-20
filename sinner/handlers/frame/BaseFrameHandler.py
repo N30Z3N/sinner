@@ -5,13 +5,12 @@ from argparse import Namespace
 from typing import List, Self
 
 from sinner.models.NumberedFrame import NumberedFrame
-from sinner.models.status.StatusMixin import StatusMixin
 from sinner.validators.AttributeLoader import Rules, AttributeLoader
 from sinner.typing import NumeratedFramePath
 from sinner.utilities import load_class, get_file_name, is_file, normalize_path
 
 
-class BaseFrameHandler(AttributeLoader, ABC, StatusMixin):
+class BaseFrameHandler(AttributeLoader, ABC):
     current_frame_index: int = 0
 
     _target_path: str
@@ -44,7 +43,7 @@ class BaseFrameHandler(AttributeLoader, ABC, StatusMixin):
     def __init__(self, target_path: str, parameters: Namespace):
         self._target_path = str(normalize_path(target_path))
         super().__init__(parameters)
-        # self.update_status(f"Handle frames for {self._target_path} ({self.fc} frame(s)/{self.fps} FPS)")
+        # app_logger.info(f"Handle frames for {self._target_path} ({self.fc} frame(s)/{self.fps} FPS)")
 
     @property
     @abstractmethod

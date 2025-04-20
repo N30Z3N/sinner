@@ -10,6 +10,7 @@ if sys.version_info < (3, 10):
     print('Python version is not supported - please upgrade to 3.10 or higher.')
     quit()
 
+from sinner.AppLogger import setup_logging # noqa: E402
 import signal  # noqa: E402
 from argparse import Namespace  # noqa: E402
 from sinner.Benchmark import Benchmark  # noqa: E402
@@ -62,6 +63,7 @@ class Sin(Sinner):
             # self.logger.info("Server shut down")
 
     def run(self) -> None:
+        setup_logging(handlers=self.log)
         if self.gui:
             preview = GUIForm(parameters=self.parameters)
             window = preview.show()

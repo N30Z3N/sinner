@@ -6,6 +6,7 @@ from concurrent.futures import ThreadPoolExecutor, Future
 from tkinter import IntVar
 from typing import List, Callable, Any, Optional
 
+from sinner.AppLogger import app_logger
 from sinner.BatchProcessingCore import BatchProcessingCore
 from sinner.gui.controls.FramePlayer.PygameFramePlayer import PygameFramePlayer
 from sinner.gui.controls.ProgressIndicator.BaseProgressIndicator import BaseProgressIndicator
@@ -22,15 +23,13 @@ from sinner.models.PerfCounter import PerfCounter
 from sinner.models.State import State
 from sinner.models.audio.BaseAudioBackend import BaseAudioBackend
 from sinner.models.processing.ProcessingModelInterface import ProcessingModelInterface, PROCESSED, EXTRACTED, PROCESSING
-from sinner.models.status.StatusMixin import StatusMixin
-from sinner.models.status.Mood import Mood
 from sinner.processors.frame.BaseFrameProcessor import BaseFrameProcessor
 from sinner.processors.frame.FrameExtractor import FrameExtractor
 from sinner.utilities import list_class_descendants, resolve_relative_path, suggest_execution_threads, suggest_temp_dir, seconds_to_hmsms, normalize_path, get_mem_usage
 from sinner.validators.AttributeLoader import Rules, AttributeLoader
 
 
-class LocalProcessingModel(AttributeLoader, StatusMixin, ProcessingModelInterface):
+class LocalProcessingModel(AttributeLoader, ProcessingModelInterface):
     """Processes in the same process"""
 
     # configuration variables
@@ -254,7 +253,7 @@ class LocalProcessingModel(AttributeLoader, StatusMixin, ProcessingModelInterfac
                 if processor_name not in self._processors:
                     self._processors[processor_name] = BaseFrameProcessor.create(processor_name, self.parameters)
         except Exception as exception:  # skip, if parameters is not enough for processor
-            self.update_status(message=str(exception), mood=Mood.BAD)
+            app_logger.exception(exception)
             pass
         return self._processors
 
@@ -270,7 +269,7 @@ class LocalProcessingModel(AttributeLoader, StatusMixin, ProcessingModelInterfac
             try:
                 preview_frame = self.frame_handler.extract_frame(frame_number)
             except Exception as exception:
-                self.update_status(message=str(exception), mood=Mood.BAD)
+                app_logger.exception(exception)
                 preview_frame = None
         else:
             if not self.TimeLine.has_index(frame_number):
@@ -446,7 +445,7 @@ class LocalProcessingModel(AttributeLoader, StatusMixin, ProcessingModelInterfac
                 with total_perf.segment("extract") as _:
                     n_frame = self.frame_handler.extract_frame(frame_index)
             except EOutOfRange:
-                self.update_status(f"There's no frame {frame_index}")
+                app_logger.info(f"There's no frame {frame_index}")
                 return None
 
             # Масштабирование
@@ -513,10 +512,10 @@ class LocalProcessingModel(AttributeLoader, StatusMixin, ProcessingModelInterfac
             frame_extractor.configure_state(state)
 
             if state.is_finished:
-                self.update_status(f'Extracting frames already done ({state.processed_frames_count}/{state.frames_count})')
+                app_logger.info(f'Extracting frames already done ({state.processed_frames_count}/{state.frames_count})')
             else:
                 if state.is_started:
-                    self.update_status(f'Temp resources for this target already exists with {state.processed_frames_count} frames extracted, continue with {state.processor_name}')
+                    app_logger.info(f'Temp resources for this target already exists with {state.processed_frames_count} frames extracted, continue with {state.processor_name}')
                 frame_extractor.process(self.frame_handler, state)  # todo: return the GUI progressbar
                 frame_extractor.release_resources()
 

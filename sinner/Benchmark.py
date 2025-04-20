@@ -9,15 +9,13 @@ import onnxruntime
 import psutil
 import torch
 
+from sinner.AppLogger import app_logger
 from sinner.BatchProcessingCore import BatchProcessingCore
-from sinner.models.status.StatusMixin import StatusMixin
 from sinner.utilities import resolve_relative_path, get_app_dir, suggest_execution_providers, decode_execution_providers, list_class_descendants
 from sinner.validators.AttributeLoader import Rules, AttributeLoader
 
 
-class Benchmark(AttributeLoader, StatusMixin):
-    emoji: str = '📏'
-
+class Benchmark(AttributeLoader):
     source_path: str
     target_path: str
     output_path: str
@@ -104,7 +102,7 @@ class Benchmark(AttributeLoader, StatusMixin):
             threads = 1
             last_execution_time = 0
             while True:
-                self.update_status(f'Benchmarking {self.frame_processor} with {execution_provider} on {threads} thread(s)')
+                app_logger.info(f'Benchmarking {self.frame_processor} with {execution_provider} on {threads} thread(s)')
                 shutil.rmtree(self.temp_dir, ignore_errors=True)
                 self.frame_processors = [self.frame_processor]
                 self.execution_threads = threads
@@ -113,7 +111,7 @@ class Benchmark(AttributeLoader, StatusMixin):
                 execution_time = self.benchmark()
 
                 self.store_result(self.frame_processor, execution_provider, threads, execution_time)
-                self.update_status(f"Result for {self.frame_processor} with {execution_provider} on {threads} thread(s) = {execution_time} ns (~{execution_time / 1000000000} sec -> {10 / (execution_time / 1000000000)} FPS)")
+                app_logger.info(f"Result for {self.frame_processor} with {execution_provider} on {threads} thread(s) = {execution_time} ns (~{execution_time / 1000000000} sec -> {10 / (execution_time / 1000000000)} FPS)")
                 if last_execution_time != 0 and execution_time > last_execution_time + self.delta:
                     break
                 last_execution_time = execution_time
@@ -152,7 +150,7 @@ class Benchmark(AttributeLoader, StatusMixin):
                 r_time = f'{Fore.GREEN}{r_time}{Style.RESET_ALL}'
             else:
                 r_time = f'{Fore.BLUE}{r_time}{Style.RESET_ALL}'
-            self.update_status(f"Result for {Fore.YELLOW}{stats['processor']}{Style.RESET_ALL} with {p_style}{provider}{Style.RESET_ALL} on {Fore.YELLOW}{stats['threads']}{Style.RESET_ALL} thread(s) = {r_time}ns (~{seconds} sec -> {fps} FPS)")
+            app_logger.info(f"Result for {Fore.YELLOW}{stats['processor']}{Style.RESET_ALL} with {p_style}{provider}{Style.RESET_ALL} on {Fore.YELLOW}{stats['threads']}{Style.RESET_ALL} thread(s) = {r_time}ns (~{seconds} sec -> {fps} FPS)")
 
     def release_resources(self) -> None:
         if 'CUDAExecutionProvider' in self.execution_providers:

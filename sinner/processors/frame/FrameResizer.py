@@ -7,8 +7,6 @@ from sinner.utilities import is_int, is_float
 
 
 class FrameResizer(BaseFrameProcessor):
-    emoji: str = '🔍'
-
     scale: float
     height: int
     width: int

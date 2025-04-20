@@ -4,8 +4,6 @@ from sinner.validators.AttributeLoader import Rules
 
 
 class VideoHandler(CV2VideoHandler, FFmpegVideoHandler):
-    emoji: str = '🎥'
-
     keep_audio: bool
 
     fps: float

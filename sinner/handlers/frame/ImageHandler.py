@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 from typing import List
 
-from sinner.models.status.Mood import Mood
+from sinner.AppLogger import app_logger
 from sinner.handlers.frame.BaseFrameHandler import BaseFrameHandler
 from sinner.handlers.frame.EOutOfRange import EOutOfRange
 from sinner.helpers.FrameHelper import read_from_image
@@ -14,8 +14,6 @@ from sinner.validators.AttributeLoader import Rules
 
 
 class ImageHandler(BaseFrameHandler):
-    emoji: str = '🖼️'
-
     def rules(self) -> Rules:
         return [
             {
@@ -55,11 +53,11 @@ class ImageHandler(BaseFrameHandler):
     def result(self, from_dir: str, filename: str, audio_target: str | None = None) -> bool:
         try:
             result_file = os.path.join(from_dir, os.listdir(from_dir).pop())
-            self.update_status(f"Copy frame from {result_file} to {filename}")
+            app_logger.info(f"Copy frame from {result_file} to {filename}")
             Path(os.path.dirname(filename)).mkdir(parents=True, exist_ok=True)
             # fixme: there can by other files in the from_dir
             shutil.copyfile(result_file, filename)
             return True
         except Exception as exception:
-            self.update_status(message=str(exception), mood=Mood.BAD)
+            app_logger.exception(exception)
             return False
