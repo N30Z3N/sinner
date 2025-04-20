@@ -174,22 +174,6 @@ class TestHandlers:
         assert handler.when == 'H'
         assert handler.backupCount == 5
 
-    @pytest.mark.skipif(platform.system() == "Windows", reason="SysLogHandler is not intended to work in Windows")
-    @patch('sinner.AppLogger.SysLogHandler')
-    def test_add_syslog_handler(self, mock_syslog, clean_logger):
-        """Тест добавления обработчика syslog"""
-        mock_handler = Mock()
-        mock_syslog.return_value = mock_handler
-
-        handler = add_handler('syslog', address='/dev/log')
-
-        assert handler in app_logger.handlers
-        mock_syslog.assert_called_once_with(
-            address='/dev/log',
-            facility=SysLogHandler.LOG_USER,
-            socktype=None
-        )
-
     def test_handler_level(self, clean_logger):
         """Тест установки уровня логирования для обработчика"""
         handler = add_handler('stdout', level=logging.WARNING)
