@@ -80,7 +80,7 @@ DEFAULT_FORMATS = {
 HandlerType: List[str] = ['stdout', 'file', 'syslog', 'rotating_file', 'timed_rotating_file']
 
 
-def add_handler(handler_type: HandlerType, level: int = logging.NOTSET, **kwargs) -> logging.Handler:  # type: ignore[no-untyped-def]
+def add_handler(handler_type: str, level: int = logging.NOTSET, **kwargs) -> logging.Handler:  # type: ignore[no-untyped-def]
     """
     Добавляет обработчик указанного типа к глобальному логгеру
     
@@ -89,12 +89,11 @@ def add_handler(handler_type: HandlerType, level: int = logging.NOTSET, **kwargs
     :param kwargs: Дополнительные параметры для обработчика
     :return: Созданный обработчик
     """
-    handler: Optional[logging.Handler] = None
 
     if handler_type == 'stdout':
         # Получение кастомных форматов или использование стандартных
         formats = kwargs.pop('formats', DEFAULT_FORMATS)
-        handler = logging.StreamHandler()
+        handler: logging.Handler = logging.StreamHandler()
         handler.setFormatter(ColoredFormatter(formats))
 
     elif handler_type == 'file':
@@ -154,7 +153,7 @@ def remove_handler(handler: logging.Handler) -> None:
         app_logger.removeHandler(handler)
 
 
-def setup_logging(level: int = logging.DEBUG, handlers: Optional[List[str]] = None) -> None:
+def setup_logging(level: int = logging.DEBUG, handlers: Optional[Union[List[str], List[Dict[str, Any]]]] = None) -> None:
     """
     Настройка логгера при запуске приложения
     
