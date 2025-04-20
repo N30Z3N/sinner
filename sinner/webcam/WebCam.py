@@ -171,7 +171,7 @@ class WebCam(AttributeLoader):
                 self._frame_render_time = render_time.execution_time
                 if self._frame_render_time < self._fps_delay:
                     time.sleep(self._fps_delay - self._frame_render_time)
-                app_logger.info(f"Real fps is {(1 / self._frame_render_time):.2f}", position=(-1, 0))
+                app_logger.info(f"Real fps is {(1 / self._frame_render_time):.2f}")
                 if hasattr(self._camera_input, '_last_frame_render_time'):
                     setattr(self._camera_input, '_last_frame_render_time', self._frame_render_time)
 
