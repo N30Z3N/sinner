@@ -44,7 +44,7 @@ class Sinner(AttributeLoader):
             {
                 'parameter': {'log'},
                 'attribute': 'log',
-                'default': ['console'],
+                'default': ['stdout'],
                 'required': False,
                 'choices': HandlerType,
                 'help': 'The set of logging handlers'
