@@ -4,14 +4,13 @@ import os
 import time
 import sys
 
-from sinner.AppLogger import setup_logging
-
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'  # do not flood with oneDNN spam
 
 if sys.version_info < (3, 10):
     print('Python version is not supported - please upgrade to 3.10 or higher.')
     quit()
 
+from sinner.AppLogger import setup_logging # noqa: E402
 import signal  # noqa: E402
 from argparse import Namespace  # noqa: E402
 from sinner.Benchmark import Benchmark  # noqa: E402
