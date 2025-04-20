@@ -38,7 +38,7 @@ class PygameAudioBackend(BaseAudioBackend):
             try:
                 self._clip.write_audiofile(self._audio_path, codec='pcm_s32le')
             except Exception as exception:
-                app_logger.error(f"Unable to save the temp audio. Possible reasons: no audio in the media/no access rights/no space on device.")
+                app_logger.error("Unable to save the temp audio. Possible reasons: no audio in the media/no access rights/no space on device.")
                 app_logger.exception(exception)
                 return
         try:
