@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 import asyncio
+import logging
 import os
 import time
 import sys
+
+from sinner.AppLogger import setup_logging
 
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'  # do not flood with oneDNN spam
 
@@ -62,6 +65,7 @@ class Sin(Sinner):
             # self.logger.info("Server shut down")
 
     def run(self) -> None:
+        setup_logging()
         if self.gui:
             preview = GUIForm(parameters=self.parameters)
             window = preview.show()

@@ -4,6 +4,7 @@ import shutil
 from argparse import Namespace
 from typing import List
 
+from sinner.AppLogger import app_logger
 from sinner.handlers.frame.BaseFrameHandler import BaseFrameHandler
 from sinner.handlers.frame.EOutOfRange import EOutOfRange
 from sinner.helpers.FrameHelper import read_from_image
@@ -14,8 +15,6 @@ from sinner.validators.AttributeLoader import Rules
 
 
 class DirectoryHandler(BaseFrameHandler):
-    emoji: str = '📂'
-
     _fps: float | None
     _fc: int | None
     _resolution: tuple[int, int]
@@ -86,6 +85,6 @@ class DirectoryHandler(BaseFrameHandler):
         return NumberedFrame(frame_number, read_from_image(frame_path), get_file_name(frame_path))  # zero-based sorted frames list
 
     def result(self, from_dir: str, filename: str, audio_target: str | None = None) -> bool:
-        self.update_status(f"Copying results from {from_dir} to {filename}")
+        app_logger.info(f"Copying results from {from_dir} to {filename}")
         shutil.copytree(from_dir, filename, dirs_exist_ok=True)
         return True  # Handler can't product any result

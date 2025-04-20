@@ -8,21 +8,20 @@ import os
 from pathvalidate import is_valid_filepath, ValidationError, validate_filepath
 from tqdm import tqdm
 
+from sinner.AppLogger import app_logger
 from sinner.models.State import State
 from sinner.handlers.frame.BaseFrameHandler import BaseFrameHandler
 from sinner.handlers.frame.DirectoryHandler import DirectoryHandler
 from sinner.handlers.frame.ImageHandler import ImageHandler
 from sinner.handlers.frame.VideoHandler import VideoHandler
 from sinner.models.NumberedFrame import NumberedFrame
-from sinner.models.status.StatusMixin import StatusMixin
-from sinner.models.status.Mood import Mood
 from sinner.processors.frame.BaseFrameProcessor import BaseFrameProcessor
 from sinner.typing import Frame
 from sinner.utilities import list_class_descendants, resolve_relative_path, is_image, is_video, get_mem_usage, suggest_max_memory, path_exists, is_dir, normalize_path, suggest_execution_threads, suggest_temp_dir
 from sinner.validators.AttributeLoader import Rules, AttributeLoader
 
 
-class BatchProcessingCore(AttributeLoader, StatusMixin):
+class BatchProcessingCore(AttributeLoader):
     target_path: str
     output_path: str
     frame_processor: List[str]
@@ -122,10 +121,10 @@ class BatchProcessingCore(AttributeLoader, StatusMixin):
             current_processor.configure_state(state)
             current_processor.configure_output_filename(self.configure_output_filename)
             if state.is_finished:
-                self.update_status(f'Processing with {processor_name} already done ({state.processed_frames_count}/{state.frames_count})')
+                app_logger.info(f'Processing with {processor_name} already done ({state.processed_frames_count}/{state.frames_count})')
             else:
                 if state.is_started:
-                    self.update_status(f'Temp resources for this target already exists with {state.processed_frames_count} frames processed, continue processing with {state.processor_name}')
+                    app_logger.info(f'Temp resources for this target already exists with {state.processed_frames_count} frames processed, continue processing with {state.processor_name}')
                 if current_processor.self_processing:
                     current_processor.process(handler, state)
                 else:
@@ -138,10 +137,10 @@ class BatchProcessingCore(AttributeLoader, StatusMixin):
             handler = self.suggest_handler(self.target_path, self.parameters)
             handler.result(from_dir=current_target_path, filename=str(self._output_file), audio_target=self.target_path)
         else:
-            self.update_status('Target path is empty, ignoring', mood=Mood.BAD)
+            app_logger.warn('Target path is empty, ignoring')
 
         if self.keep_frames is False:
-            self.update_status('Deleting temp resources')
+            app_logger.info('Deleting temp resources')
             for dir_path in temp_resources:
                 shutil.rmtree(dir_path, ignore_errors=True)
 
@@ -151,7 +150,7 @@ class BatchProcessingCore(AttributeLoader, StatusMixin):
             numbered_frame.frame = process(numbered_frame.frame)
             save(numbered_frame)
         except Exception as exception:
-            self.update_status(message=str(exception), mood=Mood.BAD)
+            app_logger.exception(exception)
             quit()
 
     def process(self, processor: BaseFrameProcessor, handler: BaseFrameHandler, state: State) -> None:

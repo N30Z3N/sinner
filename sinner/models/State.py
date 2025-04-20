@@ -3,16 +3,14 @@ from argparse import Namespace
 from pathlib import Path
 from typing import Any, Dict, List
 
+from sinner.AppLogger import app_logger
 from sinner.helpers.FrameHelper import write_to_image, EmptyFrame
 from sinner.models.NumberedFrame import NumberedFrame
-from sinner.models.status.StatusMixin import StatusMixin
-from sinner.models.status.Mood import Mood
 from sinner.utilities import is_absolute_path, format_sequences, path_exists, is_file, normalize_path, get_file_name
 from sinner.validators.AttributeLoader import Rules, AttributeLoader
 
 
-class State(AttributeLoader, StatusMixin):
-    emoji: str = '👀'
+class State(AttributeLoader):
     source_path: str | None = None
     initial_target_path: str | None = None
 
@@ -57,7 +55,7 @@ class State(AttributeLoader, StatusMixin):
             {"Temporary dir": self.temp_dir}
         ]
         state_string = "\n".join([f"\t{key}: {value}" for dict_line in state for key, value in dict_line.items()])
-        self.update_status(f'The processing state:\n{state_string}')
+        app_logger.info(f'The processing state:\n{state_string}')
 
     @property
     def temp_dir(self) -> str:
@@ -165,7 +163,7 @@ class State(AttributeLoader, StatusMixin):
         result = True
         processed_frames_count = self.processed_frames_count
         if self.final_check_state and not self.is_finished:
-            self.update_status(message=f"The final processing check failed: processing is done, but state is not finished. Check in {self.path}, may be some frames lost?", mood=Mood.BAD)
+            app_logger.error(f"The final processing check failed: processing is done, but state is not finished. Check in {self.path}, maybe some frames lost?")
             result = False
 
         if self.final_check_empty:  # check if all frames are non zero-sized
@@ -174,13 +172,13 @@ class State(AttributeLoader, StatusMixin):
                 if is_file(file_path) and os.path.getsize(file_path) == 0:
                     zero_sized_files_count += 1
             if zero_sized_files_count > 0:
-                self.update_status(message=f"There are zero-sized files in {self.path} temp directory ({zero_sized_files_count} of {processed_frames_count}). Check for free disk space and access rights.", mood=Mood.BAD)
+                app_logger.error(f"There are zero-sized files in {self.path} temp directory ({zero_sized_files_count} of {processed_frames_count}). Check for free disk space and access rights.")
                 result = False
         lost_frames = []
         if self.final_check_integrity and not self.is_finished:
             lost_frames = self.check_integrity()
             if lost_frames:
-                self.update_status(message=f"There are lost frames in the processed sequence: {format_sequences(lost_frames)}", mood=Mood.BAD)
+                app_logger.error(f"There are lost frames in the processed sequence: {format_sequences(lost_frames)}")
                 result = False
 
         return result, lost_frames

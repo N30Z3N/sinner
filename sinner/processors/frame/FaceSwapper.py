@@ -9,8 +9,8 @@ import insightface
 import torch
 from insightface.app.common import Face
 
+from sinner.AppLogger import app_logger
 from sinner.FaceAnalyser import FaceAnalyser
-from sinner.models.status.Mood import Mood
 from sinner.helpers.FrameHelper import read_from_image
 from sinner.validators.AttributeLoader import Rules
 from sinner.processors.frame.BaseFrameProcessor import BaseFrameProcessor
@@ -19,8 +19,6 @@ from sinner.utilities import conditional_download, get_app_dir, is_image, normal
 
 
 class FaceSwapper(BaseFrameProcessor):
-    emoji: str = '🔁'
-
     source_path: str
     many_faces: bool = False
     less_output: bool = True
@@ -71,11 +69,11 @@ class FaceSwapper(BaseFrameProcessor):
     def source_face(self) -> Face | None:
         if self._source_face is None:
             if self.source_path is None:
-                # self.update_status(f"There is no source path is provided, ignoring", mood=Mood.BAD)
+                # app_logger.info(f"There is no source path is provided, ignoring", mood=Mood.BAD)
                 return self._source_face
             self._source_face = self.face_analyser.get_one_face(read_from_image(self.source_path))
             if self._source_face is None:
-                self.update_status(f"There is no face found on {self.source_path}", mood=Mood.BAD)
+                app_logger.warn(f"There is no face found on {self.source_path}")
             else:
                 face_data: List[Dict[str, Any]] = [
                     {"Age": self._source_face.age},
@@ -83,7 +81,7 @@ class FaceSwapper(BaseFrameProcessor):
                     {"det_score": self._source_face.det_score},
                 ]
                 face_info = "\n".join([f"\t{key}: {value}" for dict_line in face_data for key, value in dict_line.items()])
-                self.update_status(f'Recognized source face:\n{face_info}')
+                app_logger.info(f'Recognized source face:\n{face_info}')
         return self._source_face
 
     @property
@@ -109,7 +107,7 @@ class FaceSwapper(BaseFrameProcessor):
         super().__init__(parameters)
 
         if self.source_path is None:
-            self.update_status("No source path is set, assuming GUI mode bootstrap", mood=Mood.NEUTRAL)
+            app_logger.warn("No source path is set, assuming GUI mode bootstrap")
             _, _, _ = self.face_analyser, self.face_swapper, self.face_analyser.face_analyser
 
     def process_frame(self, frame: Frame) -> Frame:
@@ -138,7 +136,7 @@ class FaceSwapper(BaseFrameProcessor):
         if face.sex == target_gender:
             return True
         if face.sex not in ['M', 'F']:
-            self.update_status("Unable to determine gender for a face. Skipping this face.", mood=Mood.NEUTRAL)
+            app_logger.info("Unable to determine gender for a face. Skipping this face.")
         return False
 
     def release_resources(self) -> None:

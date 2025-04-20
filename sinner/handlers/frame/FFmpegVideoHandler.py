@@ -8,17 +8,15 @@ from typing import List
 import cv2
 from numpy import uint8, frombuffer
 
+from sinner.AppLogger import app_logger
 from sinner.handlers.frame.BaseFrameHandler import BaseFrameHandler
 from sinner.handlers.frame.EOutOfRange import EOutOfRange
 from sinner.models.NumberedFrame import NumberedFrame
-from sinner.models.status.Mood import Mood
 from sinner.typing import NumeratedFramePath
 from sinner.validators.AttributeLoader import Rules
 
 
 class FFmpegVideoHandler(BaseFrameHandler):
-    emoji: str = '🎥'
-
     output_fps: float
     ffmpeg_resulting_parameters: str
 
@@ -42,12 +40,12 @@ class FFmpegVideoHandler(BaseFrameHandler):
     def run(self, args: List[str]) -> bool:
         commands = ['ffmpeg', '-y', '-hide_banner', '-hwaccel', 'auto', '-loglevel', 'verbose', '-progress', 'pipe:1']
         commands.extend(args)
-        self.update_status(message=' '.join(commands), mood=Mood.NEUTRAL)
+        app_logger.info(' '.join(commands))
         try:
             subprocess.check_output(commands, stderr=subprocess.STDOUT)
             return True
         except Exception as exception:
-            self.update_status(message=str(exception), mood=Mood.BAD)
+            app_logger.exception(exception)
             pass
         return False
 
@@ -70,7 +68,7 @@ class FFmpegVideoHandler(BaseFrameHandler):
                 numerator, denominator = map(int, output)
                 self._fps = numerator / denominator
             except Exception as exception:
-                self.update_status(message=str(exception), mood=Mood.BAD)
+                app_logger.exception(exception)
                 self._fps = 30.0
         return self._fps
 
@@ -84,7 +82,7 @@ class FFmpegVideoHandler(BaseFrameHandler):
                     return 1  # non-frame files, still processable
                 self._fc = int(output)
             except Exception as exception:
-                self.update_status(message=str(exception), mood=Mood.BAD)
+                app_logger.exception(exception)
                 self._fc = 0
         return self._fc
 
@@ -99,7 +97,7 @@ class FFmpegVideoHandler(BaseFrameHandler):
                 w, h = output.split('x')
                 self._resolution = int(w), int(h)
             except Exception as exception:
-                self.update_status(message=str(exception), mood=Mood.BAD)
+                app_logger.exception(exception)
                 self._resolution = 0, 0
         return self._resolution
 
@@ -119,7 +117,7 @@ class FFmpegVideoHandler(BaseFrameHandler):
         return NumberedFrame(frame_number, cv2.imdecode(frombuffer(output, uint8), cv2.IMREAD_COLOR))
 
     def result(self, from_dir: str, filename: str, audio_target: str | None = None) -> bool:
-        self.update_status(f"Resulting frames from {from_dir} to {filename} with {self.output_fps} FPS")
+        app_logger.info(f"Resulting frames from {from_dir} to {filename} with {self.output_fps} FPS")
         filename_length = len(str(self.fc))  # a way to determine frame names length
         Path(os.path.dirname(filename)).mkdir(parents=True, exist_ok=True)
         command = ['-framerate', str(self.output_fps), '-i', os.path.join(from_dir, f'%0{filename_length}d.png')]

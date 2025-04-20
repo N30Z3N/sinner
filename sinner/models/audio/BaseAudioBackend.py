@@ -3,12 +3,12 @@ from abc import ABC, abstractmethod
 from argparse import Namespace
 from typing import Any
 
-from sinner.models.status.StatusMixin import StatusMixin
+from sinner.AppLogger import app_logger
 from sinner.utilities import normalize_path, load_class, list_class_descendants
 from sinner.validators.AttributeLoader import AttributeLoader
 
 
-class BaseAudioBackend(AttributeLoader, ABC, StatusMixin):
+class BaseAudioBackend(AttributeLoader, ABC):
     _media_path: str | None = None
 
     @staticmethod
@@ -51,7 +51,7 @@ class BaseAudioBackend(AttributeLoader, ABC, StatusMixin):
         :param media_path: string path to the current mediafile
         """
         self._media_path = str(normalize_path(media_path))
-        self.update_status(f"Using audio backend for {self._media_path}")
+        app_logger.info(f"Using audio backend for {self._media_path}")
 
     @property
     @abstractmethod

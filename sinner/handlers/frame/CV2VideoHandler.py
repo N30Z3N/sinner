@@ -8,7 +8,7 @@ import psutil
 from cv2 import VideoCapture
 from tqdm import tqdm
 
-from sinner.models.status.Mood import Mood
+from sinner.AppLogger import app_logger
 from sinner.handlers.frame.BaseFrameHandler import BaseFrameHandler
 from sinner.handlers.frame.EOutOfRange import EOutOfRange
 from sinner.helpers.FrameHelper import write_to_image, read_from_image
@@ -19,8 +19,6 @@ from sinner.validators.AttributeLoader import Rules
 
 
 class CV2VideoHandler(BaseFrameHandler):
-    emoji: str = '📹'
-
     output_fps: float
     max_memory: int
 
@@ -165,9 +163,9 @@ class CV2VideoHandler(BaseFrameHandler):
         return NumberedFrame(frame_number, frame)
 
     def result(self, from_dir: str, filename: str, audio_target: str | None = None) -> bool:
-        self.update_status(f"Resulting frames from {from_dir} to {filename} with {self.output_fps} FPS")
+        app_logger.info(f"Resulting frames from {from_dir} to {filename} with {self.output_fps} FPS")
         if audio_target is not None:
-            self.update_status(message='Sound copying is not supported in CV2VideoHandler', mood=Mood.NEUTRAL)
+            app_logger.info('Sound copying is not supported in CV2VideoHandler')
         try:
             Path(os.path.dirname(filename)).mkdir(parents=True, exist_ok=True)
             frame_files = glob.glob(os.path.join(glob.escape(from_dir), '*.png'))
@@ -181,7 +179,7 @@ class CV2VideoHandler(BaseFrameHandler):
             video_writer.release()
             return True
         except Exception as exception:
-            self.update_status(message=str(exception), mood=Mood.BAD)
+            app_logger.exception(exception)
             return False
 
     def suggest_codec(self) -> int:
@@ -189,6 +187,6 @@ class CV2VideoHandler(BaseFrameHandler):
         for codec in codecs_strings:
             fourcc = cv2.VideoWriter_fourcc(*codec)
             if 0 != fourcc:
-                self.update_status(message=f"Suggested codec: {fourcc}", mood=Mood.NEUTRAL)
+                app_logger.info(f"Suggested codec: {fourcc}")
                 return fourcc
         raise NotImplementedError('No supported codecs found')

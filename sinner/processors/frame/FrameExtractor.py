@@ -10,7 +10,6 @@ from sinner.processors.frame.BaseFrameProcessor import BaseFrameProcessor
 
 
 class FrameExtractor(BaseFrameProcessor):
-    emoji: str = '🏃'
     self_processing: bool = True
 
     def rules(self) -> Rules:

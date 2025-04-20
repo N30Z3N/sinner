@@ -6,6 +6,7 @@ from concurrent.futures import Future
 from concurrent.futures.thread import ThreadPoolExecutor
 from typing import Dict, List, Optional
 
+from sinner.AppLogger import app_logger
 from sinner.BatchProcessingCore import BatchProcessingCore
 from sinner.server.api.messages.NotificationMessage import NotificationMessage
 
@@ -22,15 +23,13 @@ from sinner.models.FrameTimeLine import FrameTimeLine
 from sinner.models.MovingAverage import MovingAverage
 from sinner.models.PerfCounter import PerfCounter
 from sinner.models.State import State
-from sinner.models.status.StatusMixin import StatusMixin
-from sinner.models.status.Mood import Mood
 from sinner.processors.frame.BaseFrameProcessor import BaseFrameProcessor
 from sinner.processors.frame.FrameExtractor import FrameExtractor
 from sinner.utilities import suggest_execution_threads, suggest_temp_dir
 from sinner.validators.AttributeLoader import Rules, AttributeLoader
 
 
-class FrameProcessingServer(AttributeLoader, StatusMixin):
+class FrameProcessingServer(AttributeLoader):
     """Server component for processing frames in a separate process."""
 
     # configuration variables
@@ -173,7 +172,7 @@ class FrameProcessingServer(AttributeLoader, StatusMixin):
                 if processor_name not in self._processors:
                     self._processors[processor_name] = BaseFrameProcessor.create(processor_name, self.parameters)
         except Exception as exception:  # skip, if parameters is not enough for processor
-            self.update_status(message=str(exception), mood=Mood.BAD)
+            app_logger.exception(exception)
             pass
         return self._processors
 
@@ -336,7 +335,7 @@ class FrameProcessingServer(AttributeLoader, StatusMixin):
                 with total_perf.segment("extract") as _:
                     n_frame = self.frame_handler.extract_frame(frame_index)
             except EOutOfRange:
-                self.update_status(f"There's no frame {frame_index}")
+                app_logger.info(f"There's no frame {frame_index}")
                 return None
 
             # Масштабирование
@@ -376,10 +375,10 @@ class FrameProcessingServer(AttributeLoader, StatusMixin):
             frame_extractor.configure_state(state)
 
             if state.is_finished:
-                self.update_status(f'Extracting frames already done ({state.processed_frames_count}/{state.frames_count})')
+                app_logger.info(f'Extracting frames already done ({state.processed_frames_count}/{state.frames_count})')
             else:
                 if state.is_started:
-                    self.update_status(f'Temp resources for this target already exists with {state.processed_frames_count} frames extracted, continue with {state.processor_name}')
+                    app_logger.info(f'Temp resources for this target already exists with {state.processed_frames_count} frames extracted, continue with {state.processor_name}')
                 frame_extractor.process(self.frame_handler, state)  # todo: return the GUI progressbar
                 frame_extractor.release_resources()
 

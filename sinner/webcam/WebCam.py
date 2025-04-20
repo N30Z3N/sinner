@@ -11,9 +11,8 @@ from cv2 import VideoCapture
 from psutil import WINDOWS, LINUX, MACOS
 from pyvirtualcam import Camera
 
+from sinner.AppLogger import app_logger
 from sinner.models.PerfCounter import PerfCounter
-from sinner.models.status.StatusMixin import StatusMixin
-from sinner.models.status.Mood import Mood
 from sinner.processors.frame.BaseFrameProcessor import BaseFrameProcessor
 from sinner.typing import Frame
 from sinner.utilities import list_class_descendants, resolve_relative_path, is_image, is_video
@@ -23,9 +22,7 @@ from sinner.webcam.NoDevice import NoDevice
 from sinner.webcam.VideoCamera import VideoCamera
 
 
-class WebCam(AttributeLoader, StatusMixin):
-    emoji: str = '🤳'
-
+class WebCam(AttributeLoader):
     stop: bool = False
 
     frame_processor: List[str]
@@ -127,7 +124,7 @@ class WebCam(AttributeLoader, StatusMixin):
             self._device = NoDevice(width=self.width, height=self.height, fps=self.fps)
         else:
             self._device = Camera(width=self.width, height=self.height, fps=self.fps, device=self.output_device, backend=self.output_device, print_fps=self.print_fps)
-            self.update_status(f"Virtual device camera is created as {self.output_device} with {self.width}x{self.height}@{self.fps}fps output")
+            app_logger.info(f"Virtual device camera is created as {self.output_device} with {self.width}x{self.height}@{self.fps}fps output")
 
         self._frames_queue = queue.Queue()
 
@@ -139,17 +136,17 @@ class WebCam(AttributeLoader, StatusMixin):
         if isinstance(self.input_device, str):
             if is_image(self.input_device):
                 self._camera_input = ImageCamera(self.input_device, self.width, self.height)
-                self.update_status(f"Using image {self.input_device} as camera input")
+                app_logger.info(f"Using image {self.input_device} as camera input")
                 return self._camera_input
             if is_video(self.input_device):
                 self._camera_input = VideoCamera(self.input_device, self._frame_render_time, self.width, self.height)
-                self.update_status(f"Using video file {self.input_device} as camera input")
+                app_logger.info(f"Using video file {self.input_device} as camera input")
                 return self._camera_input
 
         self._camera_input = cv2.VideoCapture(self.input_device)
         if not self._camera_input.isOpened():
             raise Exception(f"Error opening camera {self.input_device}")
-        self.update_status(f"Camera input is opened at device={self.input_device}")
+        app_logger.info(f"Camera input is opened at device={self.input_device}")
         return self._camera_input
 
     def process(self) -> None:
@@ -158,9 +155,9 @@ class WebCam(AttributeLoader, StatusMixin):
                 with PerfCounter() as render_time:
                     ret, frame = self._camera_input.read()
                     if not ret:
-                        self.update_status("Error reading input from camera", mood=Mood.BAD)
+                        app_logger.error("Error reading input from camera")
                         if self.auto_restart:
-                            self.update_status("Reopening camera device")
+                            app_logger.info("Reopening camera device")
                             self._camera_input.release()
                             self.open_camera()
                         continue
@@ -174,7 +171,7 @@ class WebCam(AttributeLoader, StatusMixin):
                 self._frame_render_time = render_time.execution_time
                 if self._frame_render_time < self._fps_delay:
                     time.sleep(self._fps_delay - self._frame_render_time)
-                self.update_status(f"Real fps is {(1 / self._frame_render_time):.2f}", position=(-1, 0))
+                app_logger.info(f"Real fps is {(1 / self._frame_render_time):.2f}", position=(-1, 0))
                 if hasattr(self._camera_input, '_last_frame_render_time'):
                     setattr(self._camera_input, '_last_frame_render_time', self._frame_render_time)
 
