@@ -2,7 +2,7 @@ import threading
 import time
 from typing import List, Optional, Self
 
-from sinner.models.FrameDirectoryBuffer import FrameDirectoryBuffer
+from sinner.models.framebuffer.FrameDirectoryBuffer import FrameDirectoryBuffer
 from sinner.models.NumberedFrame import NumberedFrame
 
 
