@@ -2,15 +2,16 @@ import threading
 import time
 from typing import List, Optional, Self
 
-from sinner.models.framebuffer.FrameDirectoryBuffer import FrameDirectoryBuffer
 from sinner.models.NumberedFrame import NumberedFrame
+from sinner.models.framebuffer.FrameBufferInterface import FrameBufferInterface
+from sinner.models.framebuffer.FrameMemoryBuffer import FrameMemoryBuffer
 
 
 class FrameTimeLine:
     _source_name: Optional[str] = None
     _target_name: Optional[str] = None
 
-    _FrameBuffer: FrameDirectoryBuffer
+    _FrameBuffer: FrameBufferInterface
     _timer: float = 0
     _frame_time: float = 0
     _start_frame_index: int = 0
@@ -25,7 +26,7 @@ class FrameTimeLine:
 
     def __init__(self, temp_dir: str) -> None:
         self._temp_dir = temp_dir
-        self._FrameBuffer = FrameDirectoryBuffer(self._temp_dir)
+        self._FrameBuffer = FrameMemoryBuffer(self._temp_dir)
 
     def load(self, source_name: Optional[str] = None, target_name: Optional[str] = None, frame_time: float = 0, start_frame: int = 0, end_frame: int = 0) -> Self:
         """Loads source/target pair to the timeline"""
