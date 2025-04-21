@@ -5,10 +5,11 @@ from typing import List, Optional, ClassVar, Self
 
 from sinner.helpers.FrameHelper import write_to_image, read_from_image
 from sinner.models.NumberedFrame import NumberedFrame
+from sinner.models.framebuffer.FrameBufferInterface import FrameBufferInterface
 from sinner.utilities import is_absolute_path, path_exists, get_file_name, normalize_path
 
 
-class FrameDirectoryBuffer:
+class FrameDirectoryBuffer(FrameBufferInterface):
     endpoint_name: ClassVar[str] = 'preview'
     _temp_dir: str
 
@@ -18,7 +19,6 @@ class FrameDirectoryBuffer:
     _zfill_length: Optional[int] = None
     _path: Optional[str] = None
     _indices: List[int] = []
-    _miss: int = 0  # the current miss between requested frame and the returned one
     _indices_lock: threading.RLock
 
     _loaded: bool = False  # flag to check if source & target names are loaded
@@ -99,7 +99,7 @@ class FrameDirectoryBuffer:
                 raise Exception(f"Error saving frame: {self.get_frame_processed_name(frame)}")
             self._indices.append(frame.index)
 
-    def get_frame(self, index: int, return_previous: bool = True) -> NumberedFrame | None:
+    def get_frame(self, index: int, return_previous: bool = True) -> Optional[NumberedFrame]:
         if not self._loaded:  # not loaded
             return None
         if self.has_index(index):
@@ -143,7 +143,3 @@ class FrameDirectoryBuffer:
         """Adds index internally. Introduced for remote processing"""
         with self._indices_lock:
             self._indices.append(index)
-
-    @property
-    def miss(self) -> int:
-        return self._miss
