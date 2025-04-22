@@ -21,7 +21,6 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
         self._buffer_size_bytes = buffer_size_bytes
         self._memory_buffer: Dict[int, NumberedFrame] = {}
         self._buffer_lock = threading.RLock()
-        self._buffer_condition = threading.Condition(self._buffer_lock)
         self._current_buffer_size_bytes = 0
         self._frame_sizes: Dict[int, int] = {}
         self._disk_write_executor = ThreadPoolExecutor(max_workers=psutil.cpu_count())
@@ -45,10 +44,11 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
         frame_size = frame.frame.nbytes
 
         with self._buffer_lock:
-            # If buffer is already full, wait until space is available
-            while self._current_buffer_size_bytes + frame_size > self._buffer_size_bytes:
-                app_logger.debug(f"Memory buffer full ({self._current_buffer_size_bytes}/{self._buffer_size_bytes} bytes), waiting for space")
-                self._buffer_condition.wait()
+            if self._current_buffer_size_bytes + frame_size > self._buffer_size_bytes:
+                # Буфер заполнен, сразу записываем на диск без сохранения в памяти
+                app_logger.info(f"Memory buffer full ({self._current_buffer_size_bytes}/{self._buffer_size_bytes} bytes), frame {frame.index} stored directly to disk")
+                self._save_frame_to_disk(frame)
+                return
 
             # Add frame to memory buffer
             self._memory_buffer[frame.index] = frame
@@ -90,9 +90,6 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
 
                 if frame.frame is None or frame.frame.size == 0:
                     app_logger.warning(f"Empty frame {index} retrieved from memory buffer!")
-
-                # Notify waiting threads that space is now available
-                self._buffer_condition.notify_all()
                 return frame
 
         # Используем родительский метод для получения кадра с диска
@@ -126,9 +123,6 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
             self._memory_buffer.clear()
             self._frame_sizes.clear()
             self._current_buffer_size_bytes = 0
-
-            # Notify any waiting threads
-            self._buffer_condition.notify_all()
 
     def init_indices(self) -> None:
         """Initialize indices from disk and memory."""
