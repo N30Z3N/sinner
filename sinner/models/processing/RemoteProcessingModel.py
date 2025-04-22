@@ -134,7 +134,7 @@ class RemoteProcessingModel(AttributeLoader, ProcessingModelInterface):
         self.progress_control = progress_control
 
         self._status("Time position", seconds_to_hmsms(0))
-        self._status("Frame position", f'{self.position.get()}/{self.metadata.frames_count}')
+        self._status("Frame position", f'{self.position.get()}/{self.metadata.frames_count - 1}')
 
         # Initialize event flags
         self._event_playback = Event()
@@ -234,7 +234,7 @@ class RemoteProcessingModel(AttributeLoader, ProcessingModelInterface):
         else:
             self.update_preview()
             self._status("Time position", seconds_to_hmsms(0))
-            self._status("Frame position", f'{self.position.get()}/{self.metadata.frames_count}')
+            self._status("Frame position", f'{self.position.get()}/{self.metadata.frames_count - 1}')
 
     @property
     def source_dir(self) -> str | None:
@@ -345,7 +345,7 @@ class RemoteProcessingModel(AttributeLoader, ProcessingModelInterface):
             self.AudioPlayer.position = int(frame_position * self.metadata.frame_time)
 
         self._status("Time position", seconds_to_hmsms(self.metadata.frame_time * (frame_position - 1)))
-        self._status("Frame position", f'{self.position.get()}/{self.metadata.frames_count}')
+        self._status("Frame position", f'{self.position.get()}/{self.metadata.frames_count - 1}')
 
         # Update server with new requested position
         self.ProcessingClient.rewind(frame_position)
@@ -446,7 +446,7 @@ class RemoteProcessingModel(AttributeLoader, ProcessingModelInterface):
 
                                 if self.TimeLine.last_returned_index:
                                     self._status("Time position", seconds_to_hmsms(self.TimeLine.last_returned_index * self.metadata.frame_time))
-                                    self._status("Frame position", f'{self.position.get()}/{self.metadata.frames_count}')
+                                    self._status("Frame position", f'{self.position.get()}/{self.metadata.frames_count - 1}')
 
                     loop_time = time.perf_counter() - start_time  # Time for the current loop
                     sleep_time = self.metadata.frame_time - loop_time  # Time to wait for next loop
