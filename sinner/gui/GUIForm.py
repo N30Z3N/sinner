@@ -186,7 +186,7 @@ class GUIForm(AttributeLoader):
                 _run_button_command()
 
         # Navigation slider
-        self.NavigateSlider: Union[CTkSlider, BaseFramePosition] = FrameSlider(self.NavigationFrame, from_=1, variable=self.ProcessingModel.position, command=lambda position: self.ProcessingModel.rewind(int(position)), progress=self.show_progress)
+        self.NavigateSlider: Union[CTkSlider, BaseFramePosition] = FrameSlider(self.NavigationFrame, from_=0, variable=self.ProcessingModel.position, command=lambda position: self.ProcessingModel.rewind(int(position)), progress=self.show_progress)
 
         # Controls frame and contents
         self.BaseFrame: Frame = Frame(self.GUIWindow)  # it is a frame that holds all static controls with fixed size, such as main buttons and selectors
@@ -438,7 +438,7 @@ class GUIForm(AttributeLoader):
 
     def _set_target(self, filename: str) -> None:
         """Set target file path."""
-        self.NavigateSlider.position = 1
+        self.NavigateSlider.position = 0
         self.ProcessingModel.target_path = filename
         self.update_slider_bounds()
         self.TargetPathEntry.set_text(filename)
@@ -447,9 +447,9 @@ class GUIForm(AttributeLoader):
 
     def update_slider_bounds(self) -> None:
         """Update navigation slider bounds based on frame count."""
-        self.NavigateSlider.to = self.ProcessingModel.metadata.frames_count
-        self.NavigateSlider.position = 1
-        if self.NavigateSlider.to > 1:
+        self.NavigateSlider.to = self.ProcessingModel.metadata.frames_count - 1
+        self.NavigateSlider.position = 0
+        if self.NavigateSlider.to > 0:
             self.NavigateSlider.enable()
         else:
             self.NavigateSlider.disable()

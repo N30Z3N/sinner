@@ -5,10 +5,11 @@ from typing import List, Optional, ClassVar, Self
 
 from sinner.helpers.FrameHelper import write_to_image, read_from_image
 from sinner.models.NumberedFrame import NumberedFrame
+from sinner.models.framebuffer.FrameBufferInterface import FrameBufferInterface
 from sinner.utilities import is_absolute_path, path_exists, get_file_name, normalize_path
 
 
-class FrameDirectoryBuffer:
+class FrameDirectoryBuffer(FrameBufferInterface):
     endpoint_name: ClassVar[str] = 'preview'
     _temp_dir: str
 
@@ -18,12 +19,13 @@ class FrameDirectoryBuffer:
     _zfill_length: Optional[int] = None
     _path: Optional[str] = None
     _indices: List[int] = []
-    _miss: int = 0  # the current miss between requested frame and the returned one
+    _indices_lock: threading.RLock
 
     _loaded: bool = False  # flag to check if source & target names are loaded
 
     def __init__(self, temp_dir: str):
         self.temp_dir = temp_dir
+        self._indices_lock = threading.RLock()  # RLock позволяет повторно получать блокировку тем же потоком
 
     def load(self, source_name: str, target_name: str, frames_count: int) -> Self:
         self._path = None
@@ -36,13 +38,14 @@ class FrameDirectoryBuffer:
         return self
 
     def flush(self) -> None:
-        self._path = None
-        self._zfill_length = None
-        self._source_name = None
-        self._target_name = None
-        self._frames_count = 0
-        self._indices = []
-        self._loaded = False
+        with self._indices_lock:
+            self._path = None
+            self._zfill_length = None
+            self._source_name = None
+            self._target_name = None
+            self._frames_count = 0
+            self._indices = []
+            self._loaded = False
 
     @property
     def temp_dir(self) -> str:
@@ -87,7 +90,7 @@ class FrameDirectoryBuffer:
         # shutil.rmtree(self._path)
 
     def add_frame(self, frame: NumberedFrame) -> None:
-        with threading.Lock():
+        with self._indices_lock:
             if not self._loaded:
                 return
                 # raise Exception(f"{self.__class__.__name__} isn't in loaded state. Call load() method properly first!")
@@ -96,17 +99,17 @@ class FrameDirectoryBuffer:
                 raise Exception(f"Error saving frame: {self.get_frame_processed_name(frame)}")
             self._indices.append(frame.index)
 
-    def get_frame(self, index: int, return_previous: bool = True) -> NumberedFrame | None:
+    def get_frame(self, index: int, return_previous: bool = True) -> Optional[NumberedFrame]:
         if not self._loaded:  # not loaded
             return None
-        filename = str(index).zfill(self.zfill_length) + '.png'
-        filepath = str(os.path.join(self.path, filename))
-        if path_exists(filepath):  # todo: check within indexes should be faster
+        if self.has_index(index):
+            filename = str(index).zfill(self.zfill_length) + '.png'
+            filepath = str(os.path.join(self.path, filename))
             try:
                 self._miss = 0
                 return NumberedFrame(index, read_from_image(filepath))
             except Exception:
-                pass
+                pass  # Файл может быть заблокирован или поврежден
         elif return_previous:
             for previous_number in range(index - 1, 0, -1):
                 if self.has_index(previous_number):
@@ -121,22 +124,22 @@ class FrameDirectoryBuffer:
         return None
 
     def has_index(self, index: int) -> bool:
-        return index in self._indices
+        with self._indices_lock:
+            return index in self._indices
 
     def init_indices(self) -> None:
-        self._indices = []
-        with os.scandir(self.path) as entries:
-            for entry in entries:
-                if entry.is_file() and entry.name.endswith(".png"):
-                    self._indices.append(int(get_file_name(entry.name)))
+        with self._indices_lock:
+            self._indices = []
+            with os.scandir(self.path) as entries:
+                for entry in entries:
+                    if entry.is_file() and entry.name.endswith(".png"):
+                        self._indices.append(int(get_file_name(entry.name)))
 
     def get_indices(self) -> List[int]:
-        return self._indices
+        with self._indices_lock:
+            return self._indices
 
     def add_index(self, index: int) -> None:
         """Adds index internally. Introduced for remote processing"""
-        self._indices.append(index)
-
-    @property
-    def miss(self) -> int:
-        return self._miss
+        with self._indices_lock:
+            self._indices.append(index)

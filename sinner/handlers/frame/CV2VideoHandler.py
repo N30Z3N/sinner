@@ -100,7 +100,7 @@ class CV2VideoHandler(BaseFrameHandler):
                     bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt} [{elapsed}<{remaining}, {rate_fmt}{postfix}]',
                     initial=start
             ) as progress:
-                for frame_index in range(start, stop + 1):
+                for frame_index in range(start, stop + 1):  # increase stop as it required by range() logic
                     frame: Frame
                     ret, frame = capture.read()
                     if not ret:

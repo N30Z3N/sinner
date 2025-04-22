@@ -1,9 +1,9 @@
 from sinner.handlers.frame.CV2VideoHandler import CV2VideoHandler
-from sinner.handlers.frame.FFmpegVideoHandler import FFmpegVideoHandler
+from sinner.handlers.frame.FFMpegVideoHandler import FFMpegVideoHandler
 from sinner.validators.AttributeLoader import Rules
 
 
-class VideoHandler(CV2VideoHandler, FFmpegVideoHandler):
+class VideoHandler(CV2VideoHandler, FFMpegVideoHandler):
     keep_audio: bool
 
     fps: float
@@ -24,6 +24,6 @@ class VideoHandler(CV2VideoHandler, FFmpegVideoHandler):
         ]
 
     def result(self, from_dir: str, filename: str, audio_target: str | None = None) -> bool:
-        if FFmpegVideoHandler.available():
-            return FFmpegVideoHandler.result(self, from_dir, filename, audio_target)
+        if FFMpegVideoHandler.available():
+            return FFMpegVideoHandler.result(self, from_dir, filename, audio_target)
         return super().result(from_dir, filename, audio_target)
