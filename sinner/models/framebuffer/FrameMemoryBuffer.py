@@ -1,6 +1,6 @@
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from typing import Dict, Self
+from typing import Dict, Self, Optional
 
 import psutil
 
@@ -16,7 +16,15 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
     Provides the same API as FrameDirectoryBuffer with improved performance through in-memory caching.
     """
 
-    def __init__(self, temp_dir: str, buffer_size_bytes: int = 128 * 1024 * 1024):  # Default 128MB
+    def __init__(self, temp_dir: str, buffer_size_bytes: int = 128 * 1024 * 1024, remove_earlier_frames: bool = True):
+        """
+        Initialize a memory buffer with disk storage.
+
+        Args:
+            temp_dir: Directory for temporary files
+            buffer_size_bytes: Maximum memory buffer size in bytes
+            remove_earlier_frames: If True, when a frame is requested, all frames with lower indices will be removed from memory
+        """
         super().__init__(temp_dir)
         self._buffer_size_bytes = buffer_size_bytes
         self._memory_buffer: Dict[int, NumberedFrame] = {}
@@ -24,6 +32,7 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
         self._current_buffer_size_bytes = 0
         self._frame_sizes: Dict[int, int] = {}
         self._disk_write_executor = ThreadPoolExecutor(max_workers=psutil.cpu_count())
+        self._remove_earlier_frames = remove_earlier_frames  # Default strategy for removing earlier frames
 
     def load(self, source_name: str, target_name: str, frames_count: int) -> Self:
         """Load source/target pair to the buffer."""
@@ -38,7 +47,7 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
     def add_frame(self, frame: NumberedFrame) -> None:
         """
         Add a frame to the buffer. Stores frame in memory and asynchronously writes to disk.
-        Blocks if the buffer is full until space becomes available.
+        If the buffer is full, writes directly to disk without storing in memory.
         """
         # Calculate frame size in bytes
         frame_size = frame.frame.nbytes
@@ -75,21 +84,40 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
         except Exception as e:
             app_logger.exception(f"Error saving frame {frame.index} to disk: {e}")
 
-    def get_frame(self, index: int, return_previous: bool = True) -> NumberedFrame | None:
+    def get_frame(self, index: int, return_previous: bool = True, remove_earlier_frames: Optional[bool] = None) -> NumberedFrame | None:
         """
         Get a frame by index. Checks memory buffer first, then disk.
         Removes the frame from memory buffer after retrieval.
+
+        Args:
+            index: The index of the frame to retrieve
+            return_previous: If True, return the previous frame if the requested frame is not found
+            remove_earlier_frames: If True, also removes frames with indices lower than the requested index.
+                                  If None, uses the default strategy set during initialization.
         """
+        # Determine which clearing strategy to use
+        clear_strategy = self._remove_earlier_frames if remove_earlier_frames is None else remove_earlier_frames
+
         # First check if the frame is in memory
         with self._buffer_lock:
             if index in self._memory_buffer:
+                # Get the requested frame
                 frame = self._memory_buffer.pop(index)
                 frame_size = self._frame_sizes.pop(index)
                 self._current_buffer_size_bytes -= frame_size
-                self._miss = 0
 
-                if frame.frame is None or frame.frame.size == 0:
-                    app_logger.warning(f"Empty frame {index} retrieved from memory buffer!")
+                # If we need to remove earlier frames
+                if clear_strategy:
+                    earlier_indices = [i for i in list(self._memory_buffer.keys()) if i < index]
+                    if earlier_indices:
+                        app_logger.debug(f"Removing {len(earlier_indices)} earlier frames (indices below {index})")
+
+                    for earlier_index in earlier_indices:
+                        earlier_frame_size = self._frame_sizes.pop(earlier_index)
+                        self._memory_buffer.pop(earlier_index)
+                        self._current_buffer_size_bytes -= earlier_frame_size
+
+                self._miss = 0
                 return frame
 
         # Используем родительский метод для получения кадра с диска
@@ -147,6 +175,23 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
             self._memory_buffer.clear()
             self._frame_sizes.clear()
             self._current_buffer_size_bytes = 0
+
+    def get_buffer_info(self) -> dict:
+        """
+        Get information about the current state of the memory buffer.
+
+        Returns:
+            A dictionary with buffer statistics
+        """
+        with self._buffer_lock:
+            return {
+                "frames_in_memory": len(self._memory_buffer),
+                "memory_usage_bytes": self._current_buffer_size_bytes,
+                "memory_limit_bytes": self._buffer_size_bytes,
+                "usage_percent": (self._current_buffer_size_bytes / self._buffer_size_bytes) * 100 if self._buffer_size_bytes > 0 else 0,
+                "frame_indices_in_memory": sorted(list(self._memory_buffer.keys())),
+                "remove_earlier_frames_strategy": self._remove_earlier_frames
+            }
 
     def __del__(self) -> None:
         """Clean up resources when object is deleted."""
