@@ -3,6 +3,8 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, Self
 
+import psutil
+
 from sinner.AppLogger import app_logger
 from sinner.helpers.FrameHelper import write_to_image
 from sinner.models.NumberedFrame import NumberedFrame
@@ -23,7 +25,7 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
         self._buffer_condition = threading.Condition(self._buffer_lock)
         self._current_buffer_size_bytes = 0
         self._frame_sizes: Dict[int, int] = {}
-        self._disk_write_executor = ThreadPoolExecutor(max_workers=4)
+        self._disk_write_executor = ThreadPoolExecutor(max_workers=psutil.cpu_count())
         # Словарь для отслеживания статуса записи кадров на диск
         self._disk_write_status: Dict[int, bool] = {}
         self._disk_write_status_lock = threading.RLock()
