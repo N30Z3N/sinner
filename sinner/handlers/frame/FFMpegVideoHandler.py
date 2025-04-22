@@ -16,7 +16,7 @@ from sinner.typing import NumeratedFramePath
 from sinner.validators.AttributeLoader import Rules
 
 
-class FFmpegVideoHandler(BaseFrameHandler):
+class FFMpegVideoHandler(BaseFrameHandler):
     output_fps: float
     ffmpeg_resulting_parameters: str
 
