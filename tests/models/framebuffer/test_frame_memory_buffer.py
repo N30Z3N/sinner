@@ -29,6 +29,14 @@ def memory_buffer(temp_dir):
 
 
 @pytest.fixture
+def memory_buffer_with_early_removal(temp_dir):
+    """Создаёт экземпляр FrameMemoryBuffer с включенным удалением ранних кадров."""
+    buffer = FrameMemoryBuffer(temp_dir, buffer_size_bytes=1024 * 1024, remove_earlier_frames=True)
+    buffer.load("source", "target", 10)
+    yield buffer
+
+
+@pytest.fixture
 def sample_frame():
     """Создаёт тестовый кадр небольшого размера."""
     frame_data = np.zeros((10, 10, 3), dtype=np.uint8)
@@ -69,6 +77,13 @@ class TestBasicFunctionality:
         assert isinstance(buffer._disk_write_executor, ThreadPoolExecutor)
         assert buffer._memory_buffer == {}
         assert buffer._frame_sizes == {}
+        assert not buffer._remove_earlier_frames  # По умолчанию выключено
+
+    def test_initialization_with_early_removal(self, temp_dir):
+        """Проверка инициализации с включенным удалением ранних кадров."""
+        buffer = FrameMemoryBuffer(temp_dir, buffer_size_bytes=1024*1024, remove_earlier_frames=True)
+
+        assert buffer._remove_earlier_frames is True
 
     def test_load(self, memory_buffer):
         """Проверка метода load."""
@@ -188,6 +203,63 @@ class TestGetFrame:
         assert retrieved_frame is not None
         assert retrieved_frame.index == 5  # Последний из добавленных кадров
 
+    def test_get_frame_with_early_removal(self, memory_buffer, multiple_frames):
+        """Проверка получения кадра с удалением ранних кадров."""
+        # Добавляем кадры 1-5
+        for frame in multiple_frames:
+            memory_buffer.add_frame(frame)
+
+        # Запрашиваем кадр 3 с параметром remove_earlier_frames=True
+        retrieved_frame = memory_buffer.get_frame(3, remove_earlier_frames=True)
+
+        assert retrieved_frame is not None
+        assert retrieved_frame.index == 3
+
+        # Проверяем, что кадры 1-2 удалены из памяти
+        assert 1 not in memory_buffer._memory_buffer
+        assert 2 not in memory_buffer._memory_buffer
+
+        # Проверяем, что кадры 4-5 остались в памяти
+        assert 4 in memory_buffer._memory_buffer
+        assert 5 in memory_buffer._memory_buffer
+
+    def test_default_early_removal_strategy(self, memory_buffer_with_early_removal, multiple_frames):
+        """Проверка стратегии удаления ранних кадров по умолчанию."""
+        # Добавляем кадры 1-5
+        for frame in multiple_frames:
+            memory_buffer_with_early_removal.add_frame(frame)
+
+        # Запрашиваем кадр 3 (без явного указания параметра remove_earlier_frames)
+        # Должна использоваться стратегия по умолчанию (True)
+        retrieved_frame = memory_buffer_with_early_removal.get_frame(3)
+
+        assert retrieved_frame is not None
+        assert retrieved_frame.index == 3
+
+        # Проверяем, что кадры 1-2 удалены из памяти
+        assert 1 not in memory_buffer_with_early_removal._memory_buffer
+        assert 2 not in memory_buffer_with_early_removal._memory_buffer
+
+        # Проверяем, что кадры 4-5 остались в памяти
+        assert 4 in memory_buffer_with_early_removal._memory_buffer
+        assert 5 in memory_buffer_with_early_removal._memory_buffer
+
+    def test_override_early_removal_strategy(self, memory_buffer_with_early_removal, multiple_frames):
+        """Проверка переопределения стратегии удаления ранних кадров."""
+        # Добавляем кадры 1-5
+        for frame in multiple_frames:
+            memory_buffer_with_early_removal.add_frame(frame)
+
+        # Запрашиваем кадр 3 с явным отключением стратегии удаления ранних кадров
+        retrieved_frame = memory_buffer_with_early_removal.get_frame(3, remove_earlier_frames=False)
+
+        assert retrieved_frame is not None
+        assert retrieved_frame.index == 3
+
+        # Проверяем, что кадры 1-2 НЕ удалены из памяти (стратегия отключена для этого вызова)
+        assert 1 in memory_buffer_with_early_removal._memory_buffer
+        assert 2 in memory_buffer_with_early_removal._memory_buffer
+
 
 # Тесты мониторинга состояния буфера
 class TestBufferState:
@@ -216,6 +288,34 @@ class TestBufferState:
     def test_has_index_nonexistent(self, memory_buffer):
         """Проверка has_index для несуществующего кадра."""
         assert not memory_buffer.has_index(999)
+
+    def test_get_buffer_info(self, memory_buffer, multiple_frames):
+        """Проверка получения информации о буфере."""
+        # Добавляем кадры в буфер
+        for frame in multiple_frames:
+            memory_buffer.add_frame(frame)
+
+        # Получаем информацию о буфере
+        buffer_info = memory_buffer.get_buffer_info()
+
+        # Проверяем наличие всех ключей
+        assert "frames_in_memory" in buffer_info
+        assert "memory_usage_bytes" in buffer_info
+        assert "memory_limit_bytes" in buffer_info
+        assert "usage_percent" in buffer_info
+        assert "frame_indices_in_memory" in buffer_info
+        assert "remove_earlier_frames_strategy" in buffer_info
+
+        # Проверяем значения
+        assert buffer_info["frames_in_memory"] == len(multiple_frames)
+        assert buffer_info["memory_usage_bytes"] > 0
+        assert buffer_info["memory_limit_bytes"] == memory_buffer._buffer_size_bytes
+        assert buffer_info["remove_earlier_frames_strategy"] is False  # По умолчанию отключено
+
+        # Проверяем, что все индексы присутствуют
+        frame_indices = [frame.index for frame in multiple_frames]
+        for idx in frame_indices:
+            assert idx in buffer_info["frame_indices_in_memory"]
 
 
 # Тесты операций обслуживания
