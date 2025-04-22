@@ -1,6 +1,6 @@
 import threading
 from concurrent.futures import ThreadPoolExecutor
-from typing import Dict, Self, Optional
+from typing import Dict, Self, Optional, Any
 
 import psutil
 
@@ -176,7 +176,7 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
             self._frame_sizes.clear()
             self._current_buffer_size_bytes = 0
 
-    def get_buffer_info(self) -> dict:
+    def get_buffer_info(self) -> Dict[str, Any]:
         """
         Get information about the current state of the memory buffer.
 
