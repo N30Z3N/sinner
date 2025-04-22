@@ -6,7 +6,7 @@ from typing import Iterator
 import pytest
 from numpy import ndarray
 
-from sinner.handlers.frame.FFmpegVideoHandler import FFmpegVideoHandler
+from sinner.handlers.frame.FFMpegVideoHandler import FFMpegVideoHandler
 from sinner.utilities import resolve_relative_path
 from tests.constants import TARGET_FPS, TARGET_FC, FRAME_SHAPE, tmp_dir, target_mp4, result_mp4, state_frames_dir, TARGET_RESOLUTION, broken_mp4, BROKEN_FC
 
@@ -21,12 +21,12 @@ def setup_function():
     setup()
 
 
-def get_test_object() -> FFmpegVideoHandler:
-    return FFmpegVideoHandler(target_path=target_mp4, parameters=Namespace())
+def get_test_object() -> FFMpegVideoHandler:
+    return FFMpegVideoHandler(target_path=target_mp4, parameters=Namespace())
 
 
-def get_broken_object() -> FFmpegVideoHandler:
-    return FFmpegVideoHandler(parameters=Namespace(), target_path=broken_mp4)
+def get_broken_object() -> FFMpegVideoHandler:
+    return FFMpegVideoHandler(parameters=Namespace(), target_path=broken_mp4)
 
 
 def test_available() -> None:
@@ -113,7 +113,7 @@ def test_result() -> None:
     assert os.path.exists(result_mp4) is False
     assert get_test_object().result(from_dir=state_frames_dir, filename=result_mp4) is True
     assert os.path.exists(result_mp4)
-    target = FFmpegVideoHandler(target_path=result_mp4, parameters=Namespace())
+    target = FFMpegVideoHandler(target_path=result_mp4, parameters=Namespace())
     assert target.fc == TARGET_FC
     assert target.fps == TARGET_FPS
 
