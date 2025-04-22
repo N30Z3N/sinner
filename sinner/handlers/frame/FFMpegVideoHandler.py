@@ -105,7 +105,7 @@ class FFMpegVideoHandler(BaseFrameHandler):
         filename_length = len(str(self.fc))  # a way to determine frame names length
         Path(path).mkdir(parents=True, exist_ok=True)
         start_frame = frames_range[0] if frames_range[0] is not None else 0
-        stop_frame = frames_range[1] if frames_range[1] is not None else self.fc
+        stop_frame = frames_range[1] if frames_range[1] is not None else self.fc - 1
         self.run(['-i', self._target_path, '-vf', f"select='between(n,{start_frame},{stop_frame})'", '-vsync', '0', '-pix_fmt', 'rgb24', '-frame_pts', '1', os.path.join(path, f'%{filename_length}d.png')])
         return super().get_frames_paths(path)
 
