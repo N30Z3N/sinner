@@ -51,8 +51,6 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
         # Calculate frame size in bytes
         frame_size = frame.frame.nbytes
 
-        app_logger.debug(f"Adding frame {frame.index} to buffer (size: {frame_size} bytes)")
-
         with self._buffer_lock:
             # If buffer is already full, wait until space is available
             while self._current_buffer_size_bytes + frame_size > self._buffer_size_bytes:
@@ -63,7 +61,6 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
             self._memory_buffer[frame.index] = frame
             self._frame_sizes[frame.index] = frame_size
             self._current_buffer_size_bytes += frame_size
-            app_logger.debug(f"Frame {frame.index} added to memory buffer (buffer size: {self._current_buffer_size_bytes} bytes)")
 
             # Add to indices
             with self._indices_lock:
@@ -72,7 +69,6 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
                     return
                 if frame.index not in self._indices:
                     self._indices.append(frame.index)
-                    app_logger.debug(f"Added frame {frame.index} to indices list")
 
         # Отмечаем, что запись на диск еще не завершена
         with self._disk_write_status_lock:
@@ -83,16 +79,12 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
 
     def _save_frame_to_disk(self, frame: NumberedFrame) -> None:
         """Save frame to disk asynchronously."""
-        start_time = time.time()
         try:
             frame_path = self.get_frame_processed_name(frame)
-            app_logger.debug(f"Writing frame {frame.index} to disk at {frame_path}")
 
             if not write_to_image(frame.frame, frame_path):
                 app_logger.error(f"Failed to save frame {frame.index} to disk: {frame_path}")
                 return
-
-            app_logger.debug(f"Successfully wrote frame {frame.index} to disk in {time.time() - start_time:.4f}s")
 
             # Отмечаем успешное сохранение
             with self._disk_write_status_lock:
@@ -109,8 +101,6 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
         Get a frame by index. Checks memory buffer first, then disk.
         Removes the frame from memory buffer after retrieval.
         """
-        app_logger.debug(f"Requesting frame {index} (return_previous={return_previous})")
-
         # First check if the frame is in memory
         with self._buffer_lock:
             if index in self._memory_buffer:
@@ -121,15 +111,12 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
 
                 if frame.frame is None or frame.frame.size == 0:
                     app_logger.warning(f"Empty frame {index} retrieved from memory buffer!")
-                else:
-                    app_logger.debug(f"Frame {index} retrieved from memory buffer (size: {frame_size} bytes)")
 
                 # Notify waiting threads that space is now available
                 self._buffer_condition.notify_all()
                 return frame
 
         # Если кадра нет в памяти, проверяем, был ли он записан на диск
-        disk_write_status = False
         with self._disk_write_status_lock:
             disk_write_status = self._disk_write_status.get(index, False)
 
@@ -138,9 +125,6 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
             # Небольшая задержка, чтобы дать шанс асинхронной записи завершиться
             time.sleep(0.01)
 
-        # If not in memory, check disk using parent implementation
-        app_logger.debug(f"Frame {index} not in memory, checking disk")
-
         # Используем родительский метод для получения кадра с диска
         result = super().get_frame(index, return_previous)
 
@@ -148,8 +132,6 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
             app_logger.warning(f"Frame {index} not found in memory or on disk!")
         elif result.frame is None or result.frame.size == 0:
             app_logger.warning(f"Empty frame {result.index} retrieved from disk!")
-        else:
-            app_logger.debug(f"Frame {result.index} retrieved from disk")
 
         return result
 
@@ -161,13 +143,10 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
                 return True
 
         # Then check disk
-        disk_result = super().has_index(index)
-        app_logger.debug(f"Frame {index} {'found' if disk_result else 'not found'} on disk")
-        return disk_result
+        return super().has_index(index)
 
     def flush(self) -> None:
         """Clear memory buffer and reset disk buffer."""
-        app_logger.debug("Flushing memory and disk buffers")
 
         # First flush disk storage
         super().flush()
@@ -177,19 +156,16 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
             self._memory_buffer.clear()
             self._frame_sizes.clear()
             self._current_buffer_size_bytes = 0
-            app_logger.debug("Memory buffer cleared")
 
             # Notify any waiting threads
             self._buffer_condition.notify_all()
 
         with self._disk_write_status_lock:
             self._disk_write_status.clear()
-            app_logger.debug("Disk write status cleared")
 
     def init_indices(self) -> None:
         """Initialize indices from disk and memory."""
         # Initialize indices from disk
-        app_logger.debug("Initializing indices from disk and memory")
         super().init_indices()
 
         # Add indices from memory buffer
@@ -198,12 +174,9 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
             for index in memory_indices:
                 if index not in self._indices:
                     self._indices.append(index)
-            app_logger.debug(f"Added {len(memory_indices)} indices from memory buffer")
-            app_logger.debug(f"Total indices count: {len(self._indices)}")
 
     def clean(self) -> None:
         """Clean temporary files and memory buffer."""
-        app_logger.debug("Cleaning temporary files and memory buffer")
 
         # Clean disk storage
         super().clean()
@@ -213,14 +186,11 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
             self._memory_buffer.clear()
             self._frame_sizes.clear()
             self._current_buffer_size_bytes = 0
-            app_logger.debug("Memory buffer cleared during clean")
 
         with self._disk_write_status_lock:
             self._disk_write_status.clear()
-            app_logger.debug("Disk write status cleared during clean")
 
     def __del__(self) -> None:
         """Clean up resources when object is deleted."""
-        app_logger.debug("Cleaning up FrameMemoryBuffer resources")
         if hasattr(self, '_disk_write_executor'):
             self._disk_write_executor.shutdown(wait=False)
