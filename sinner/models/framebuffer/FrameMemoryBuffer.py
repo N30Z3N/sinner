@@ -1,5 +1,4 @@
 import threading
-import time
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict, Self
 
@@ -26,9 +25,6 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
         self._current_buffer_size_bytes = 0
         self._frame_sizes: Dict[int, int] = {}
         self._disk_write_executor = ThreadPoolExecutor(max_workers=psutil.cpu_count())
-        # Словарь для отслеживания статуса записи кадров на диск
-        self._disk_write_status: Dict[int, bool] = {}
-        self._disk_write_status_lock = threading.RLock()
 
     def load(self, source_name: str, target_name: str, frames_count: int) -> Self:
         """Load source/target pair to the buffer."""
@@ -37,9 +33,6 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
             self._memory_buffer.clear()
             self._frame_sizes.clear()
             self._current_buffer_size_bytes = 0
-
-        with self._disk_write_status_lock:
-            self._disk_write_status.clear()
 
         return super().load(source_name, target_name, frames_count)
 
@@ -62,18 +55,6 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
             self._frame_sizes[frame.index] = frame_size
             self._current_buffer_size_bytes += frame_size
 
-            # Add to indices
-            with self._indices_lock:
-                if not self._loaded:
-                    app_logger.warning("Buffer not loaded, frame index not added")
-                    return
-                if frame.index not in self._indices:
-                    self._indices.append(frame.index)
-
-        # Отмечаем, что запись на диск еще не завершена
-        with self._disk_write_status_lock:
-            self._disk_write_status[frame.index] = False
-
         # Асинхронно сохраняем на диск
         self._disk_write_executor.submit(self._save_frame_to_disk, frame)
 
@@ -86,15 +67,13 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
                 app_logger.error(f"Failed to save frame {frame.index} to disk: {frame_path}")
                 return
 
-            # Отмечаем успешное сохранение
-            with self._disk_write_status_lock:
-                self._disk_write_status[frame.index] = True
+            # Добавляем индекс в список только после успешной записи на диск
+            with self._indices_lock:
+                if frame.index not in self._indices:
+                    self._indices.append(frame.index)
 
         except Exception as e:
             app_logger.exception(f"Error saving frame {frame.index} to disk: {e}")
-            # Отмечаем ошибку сохранения
-            with self._disk_write_status_lock:
-                self._disk_write_status[frame.index] = False
 
     def get_frame(self, index: int, return_previous: bool = True) -> NumberedFrame | None:
         """
@@ -115,15 +94,6 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
                 # Notify waiting threads that space is now available
                 self._buffer_condition.notify_all()
                 return frame
-
-        # Если кадра нет в памяти, проверяем, был ли он записан на диск
-        with self._disk_write_status_lock:
-            disk_write_status = self._disk_write_status.get(index, False)
-
-        if index in self._indices and not disk_write_status:
-            app_logger.warning(f"Frame {index} is in indices but disk write is not complete, possible race condition")
-            # Небольшая задержка, чтобы дать шанс асинхронной записи завершиться
-            time.sleep(0.01)
 
         # Используем родительский метод для получения кадра с диска
         result = super().get_frame(index, return_previous)
@@ -160,9 +130,6 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
             # Notify any waiting threads
             self._buffer_condition.notify_all()
 
-        with self._disk_write_status_lock:
-            self._disk_write_status.clear()
-
     def init_indices(self) -> None:
         """Initialize indices from disk and memory."""
         # Initialize indices from disk
@@ -186,9 +153,6 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
             self._memory_buffer.clear()
             self._frame_sizes.clear()
             self._current_buffer_size_bytes = 0
-
-        with self._disk_write_status_lock:
-            self._disk_write_status.clear()
 
     def __del__(self) -> None:
         """Clean up resources when object is deleted."""
