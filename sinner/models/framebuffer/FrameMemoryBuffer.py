@@ -16,7 +16,7 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
     Provides the same API as FrameDirectoryBuffer with improved performance through in-memory caching.
     """
 
-    def __init__(self, temp_dir: str, buffer_size_bytes: int = 128 * 1024 * 1024, remove_earlier_frames: bool = True):
+    def __init__(self, temp_dir: str, buffer_size_bytes: int = 128 * 1024 * 1024, remove_earlier_frames: bool = False):
         """
         Initialize a memory buffer with disk storage.
 
