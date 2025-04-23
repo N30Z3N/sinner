@@ -66,45 +66,45 @@ def test_get_frames_paths() -> None:
     frames_paths = get_test_object().get_frames_paths(path=tmp_dir)
     assert TARGET_FC == len(frames_paths)
     first_item = frames_paths[0]
-    assert (0, resolve_relative_path(os.path.join(tmp_dir, '00.png'))) == first_item
+    assert (0, resolve_relative_path(os.path.join(tmp_dir, f'00{get_test_object()._handler.extension}'))) == first_item
     last_item = frames_paths.pop()
-    assert (9, resolve_relative_path(os.path.join(tmp_dir, '09.png'))) == last_item
+    assert (9, resolve_relative_path(os.path.join(tmp_dir, f'09{get_test_object()._handler.extension}'))) == last_item
 
 
 def test_get_frames_paths_range() -> None:
     frames_paths = get_test_object().get_frames_paths(path=tmp_dir, frames_range=(3, 8))
     assert 6 == len(frames_paths)
     first_item = frames_paths[0]
-    assert first_item == (3, resolve_relative_path(os.path.join(tmp_dir, '03.png')))
+    assert first_item == (3, resolve_relative_path(os.path.join(tmp_dir, f'03{get_test_object()._handler.extension}')))
     last_item = frames_paths.pop()
-    assert (8, resolve_relative_path(os.path.join(tmp_dir, '08.png'))) == last_item
+    assert (8, resolve_relative_path(os.path.join(tmp_dir, f'08{get_test_object()._handler.extension}'))) == last_item
 
 
 def test_get_frames_paths_range_start() -> None:
     frames_paths = get_test_object().get_frames_paths(path=tmp_dir, frames_range=(None, 8))
     assert 9 == len(frames_paths)
     first_item = frames_paths[0]
-    assert (0, resolve_relative_path(os.path.join(tmp_dir, '00.png'))) == first_item
+    assert (0, resolve_relative_path(os.path.join(tmp_dir, f'00{get_test_object()._handler.extension}'))) == first_item
     last_item = frames_paths.pop()
-    assert (8, resolve_relative_path(os.path.join(tmp_dir, '08.png'))) == last_item
+    assert (8, resolve_relative_path(os.path.join(tmp_dir, f'08{get_test_object()._handler.extension}'))) == last_item
 
 
 def test_get_frames_paths_range_end() -> None:
     frames_paths = get_test_object().get_frames_paths(path=tmp_dir, frames_range=(3, None))
     assert 7 == len(frames_paths)
     first_item = frames_paths[0]
-    assert (3, resolve_relative_path(os.path.join(tmp_dir, '03.png'))) == first_item
+    assert (3, resolve_relative_path(os.path.join(tmp_dir, f'03{get_test_object()._handler.extension}'))) == first_item
     last_item = frames_paths.pop()
-    assert (9, resolve_relative_path(os.path.join(tmp_dir, '09.png'))) == last_item
+    assert (9, resolve_relative_path(os.path.join(tmp_dir, f'09{get_test_object()._handler.extension}'))) == last_item
 
 
 def test_get_frames_paths_range_empty() -> None:
     frames_paths = get_test_object().get_frames_paths(path=tmp_dir, frames_range=(None, None))
     assert TARGET_FC == len(frames_paths)
     first_item = frames_paths[0]
-    assert (0, resolve_relative_path(os.path.join(tmp_dir, '00.png'))) == first_item
+    assert (0, resolve_relative_path(os.path.join(tmp_dir, f'00{get_test_object()._handler.extension}'))) == first_item
     last_item = frames_paths.pop()
-    assert (9, resolve_relative_path(os.path.join(tmp_dir, '09.png'))) == last_item
+    assert (9, resolve_relative_path(os.path.join(tmp_dir, f'09{get_test_object()._handler.extension}'))) == last_item
 
 
 def test_get_frames_paths_range_fail() -> None:
