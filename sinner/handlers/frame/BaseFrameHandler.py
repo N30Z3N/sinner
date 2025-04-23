@@ -2,11 +2,14 @@ import glob
 import os
 from abc import ABC, abstractmethod
 from argparse import Namespace
-from typing import List, Self
+from typing import List, Self, Optional
 
+from sinner.handlers.image.BaseImageHandler import BaseImageHandler
+from sinner.handlers.image.JPEGHandler import JPEGHandler
+from sinner.handlers.image.PNGHandler import PNGHandler
 from sinner.models.NumberedFrame import NumberedFrame
 from sinner.validators.AttributeLoader import Rules, AttributeLoader
-from sinner.typing import NumeratedFramePath
+from sinner.typing import NumeratedFramePath, Frame
 from sinner.utilities import load_class, get_file_name, is_file, normalize_path
 
 
@@ -19,8 +22,26 @@ class BaseFrameHandler(AttributeLoader, ABC):
     _resolution: tuple[int, int] | None = None
     _length: float | None = None
 
+    format: str
+    quality: Optional[int]
+
+    _handler: BaseImageHandler
+
     def rules(self) -> Rules:
         return [
+            {
+                'parameter': ['image-format', 'format', 'save-format'],
+                'attribute': 'format',
+                'default': 'png',
+                'choices': ['png', 'jpg'],
+                'help': 'Format of intermediate frames files'
+            },
+            {
+                'parameter': ['image-quality', 'quality', 'save-quality'],
+                'attribute': 'quality',
+                'default': None,  # will be set in init()
+                'help': 'Quality level for jpeg files or compression level for png files'
+            },
         ]
 
     @staticmethod
@@ -43,7 +64,21 @@ class BaseFrameHandler(AttributeLoader, ABC):
     def __init__(self, target_path: str, parameters: Namespace):
         self._target_path = str(normalize_path(target_path))
         super().__init__(parameters)
-        # app_logger.info(f"Handle frames for {self._target_path} ({self.fc} frame(s)/{self.fps} FPS)")
+        match self.format:
+            case 'png':
+                self._handler = PNGHandler()
+                if self.quality:
+                    self._handler.compression_level = self.quality
+                else:
+                    self.quality = self._handler.compression_level  # set to default value from handler
+            case 'jpg':
+                self._handler = JPEGHandler()
+                if self.quality:
+                    self._handler.quality = self.quality
+                else:
+                    self.quality = self._handler.quality  # set to default value from handler
+
+            # app_logger.info(f"Handle frames for {self._target_path} ({self.fc} frame(s)/{self.fps} FPS)")
 
     @property
     @abstractmethod

@@ -11,7 +11,6 @@ from tqdm import tqdm
 from sinner.AppLogger import app_logger
 from sinner.handlers.frame.BaseFrameHandler import BaseFrameHandler
 from sinner.handlers.frame.EOutOfRange import EOutOfRange
-from sinner.helpers.FrameHelper import write_to_image, read_from_image
 from sinner.models.NumberedFrame import NumberedFrame
 from sinner.typing import NumeratedFramePath, Frame
 from sinner.utilities import get_file_name, is_file, get_mem_usage, suggest_max_memory
@@ -112,9 +111,9 @@ class CV2VideoHandler(BaseFrameHandler):
                     ret, frame = capture.read()
                     if not ret:
                         break
-                    filename: str = os.path.join(path, str(frame_index).zfill(filename_length) + ".png")
+                    filename: str = os.path.join(path, str(frame_index).zfill(filename_length) + self._handler.extension)
                     # Submit only the write_to_image function to the executor, excluding it processing time from the loop
-                    future: Future[bool] = executor.submit(write_to_image, frame, filename)
+                    future: Future[bool] = executor.submit(self._handler.write, frame, filename)
                     future.add_done_callback(write_done)
                     futures.append(future)
                     if self.memory_usage:
@@ -134,7 +133,7 @@ class CV2VideoHandler(BaseFrameHandler):
 
                 capture.release()
 
-        frames_path = sorted(glob.glob(os.path.join(glob.escape(path), '*.png')))
+        frames_path = sorted(glob.glob(os.path.join(glob.escape(path), f'*{self._handler.extension}')))
         return [(int(get_file_name(file_path)), file_path) for file_path in frames_path if is_file(file_path)]
 
     def get_mem_usage(self) -> str:
@@ -176,13 +175,13 @@ class CV2VideoHandler(BaseFrameHandler):
             app_logger.info('Sound copying is not supported in CV2VideoHandler')
         try:
             Path(os.path.dirname(filename)).mkdir(parents=True, exist_ok=True)
-            frame_files = glob.glob(os.path.join(glob.escape(from_dir), '*.png'))
-            first_frame = read_from_image(frame_files[0])
+            frame_files = glob.glob(os.path.join(glob.escape(from_dir), f'*{self._handler.extension}'))
+            first_frame = self._handler.read(frame_files[0])
             height, width, channels = first_frame.shape
             fourcc = self.suggest_codec()
             video_writer = cv2.VideoWriter(filename, fourcc, self.output_fps, (width, height))
             for frame_path in frame_files:
-                frame = read_from_image(frame_path)
+                frame = self._handler.read(frame_path)
                 video_writer.write(frame)
             video_writer.release()
             return True

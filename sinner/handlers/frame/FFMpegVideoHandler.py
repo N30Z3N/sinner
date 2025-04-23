@@ -19,6 +19,7 @@ from sinner.validators.AttributeLoader import Rules
 class FFMpegVideoHandler(BaseFrameHandler):
     output_fps: float
     ffmpeg_resulting_parameters: str
+    ffmpeg_quality_parameter: list[str]
 
     def rules(self) -> Rules:
         return [
@@ -56,8 +57,12 @@ class FFMpegVideoHandler(BaseFrameHandler):
     def __init__(self, target_path: str, parameters: Namespace):
         if not self.available():
             raise Exception('ffmpeg is not installed. Install it or use --frame-handler=cv2')
-
         super().__init__(target_path, parameters)
+        match self.format:
+            case 'png':
+                self.ffmpeg_quality_parameter = ['-compression_level', str(self.quality)]
+            case 'jpg':
+                self.ffmpeg_quality_parameter = ['-compression_level', str(round(31 - (self.quality / 100 * 30)))]
 
     @property
     def fps(self) -> float:
@@ -106,7 +111,9 @@ class FFMpegVideoHandler(BaseFrameHandler):
         Path(path).mkdir(parents=True, exist_ok=True)
         start_frame = frames_range[0] if frames_range[0] is not None else 0
         stop_frame = frames_range[1] if frames_range[1] is not None else self.fc - 1
-        self.run(['-i', self._target_path, '-vf', f"select='between(n,{start_frame},{stop_frame})'", '-vsync', '0', '-pix_fmt', 'rgb24', '-frame_pts', '1', os.path.join(path, f'%{filename_length}d.png')])
+        command = ['-i', self._target_path, '-vf', f"select='between(n,{start_frame},{stop_frame})'", '-vsync', '0', '-pix_fmt', 'rgb24', '-frame_pts', '1', os.path.join(path, f'%{filename_length}d{self._handler.extension}')]
+        command.extend(self.ffmpeg_quality_parameter)
+        self.run(command)
         return super().get_frames_paths(path)
 
     def extract_frame(self, frame_number: int) -> NumberedFrame:
@@ -120,7 +127,7 @@ class FFMpegVideoHandler(BaseFrameHandler):
         app_logger.info(f"Resulting frames from {from_dir} to {filename} with {self.output_fps} FPS")
         filename_length = len(str(self.fc))  # a way to determine frame names length
         Path(os.path.dirname(filename)).mkdir(parents=True, exist_ok=True)
-        command = ['-framerate', str(self.output_fps), '-i', os.path.join(from_dir, f'%0{filename_length}d.png')]
+        command = ['-framerate', str(self.output_fps), '-i', os.path.join(from_dir, f'%0{filename_length}d{self._handler.extension}')]
         command.extend(self.ffmpeg_resulting_parameters.split(' '))
         command.extend(['-r', str(self.output_fps), filename])
         if audio_target:
