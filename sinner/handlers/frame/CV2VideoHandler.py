@@ -11,6 +11,7 @@ from tqdm import tqdm
 from sinner.AppLogger import app_logger
 from sinner.handlers.frame.BaseFrameHandler import BaseFrameHandler
 from sinner.handlers.frame.EOutOfRange import EOutOfRange
+from sinner.helpers.FrameHelper import read_from_image
 from sinner.models.NumberedFrame import NumberedFrame
 from sinner.typing import NumeratedFramePath, Frame
 from sinner.utilities import get_file_name, is_file, get_mem_usage, suggest_max_memory
@@ -176,12 +177,12 @@ class CV2VideoHandler(BaseFrameHandler):
         try:
             Path(os.path.dirname(filename)).mkdir(parents=True, exist_ok=True)
             frame_files = glob.glob(os.path.join(glob.escape(from_dir), f'*{self._handler.extension}'))
-            first_frame = self._handler.read(frame_files[0])
+            first_frame = read_from_image(frame_files[0])
             height, width, channels = first_frame.shape
             fourcc = self.suggest_codec()
             video_writer = cv2.VideoWriter(filename, fourcc, self.output_fps, (width, height))
             for frame_path in frame_files:
-                frame = self._handler.read(frame_path)
+                frame = read_from_image(frame_path)
                 video_writer.write(frame)
             video_writer.release()
             return True
