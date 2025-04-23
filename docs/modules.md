@@ -15,6 +15,7 @@
 * `--output`, `--output-path`: path to the resulting file or directory (depends on used frame processors set and target).
 * `--processors`, `--frame-processor`, `--processor`: the frame processor module or modules that you want to apply to your files. See the [Built-in frame processors](../README.md#built-in-frame-processors) documentation for the list of built-in modules and their possibilities.
 * `--keep-frames`: keeps processed frames in the temp directory after finishing. Defaults to `false`.
+* `--memory-usage`: Enables memory usage statistics in the progress bar. Defaults to `false`. Note: the option also can be applied in GUI mode.
 
 # GUI: GUI module
 * `--frames-widget`, `--show-frames-widget`: show processed frames widget. It shows all stages of selected frame processing.
