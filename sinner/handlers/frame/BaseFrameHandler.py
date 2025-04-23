@@ -4,9 +4,9 @@ from abc import ABC, abstractmethod
 from argparse import Namespace
 from typing import List, Self, Optional
 
-from sinner.handlers.image.BaseImageHandler import BaseImageHandler
-from sinner.handlers.image.JPEGHandler import JPEGHandler
-from sinner.handlers.image.PNGHandler import PNGHandler
+from sinner.handlers.writers.BaseImageWriter import BaseImageWriter
+from sinner.handlers.writers.JPEGHandler import JPEGWriter
+from sinner.handlers.writers.PNGHandler import PNGWriter
 from sinner.models.NumberedFrame import NumberedFrame
 from sinner.validators.AttributeLoader import Rules, AttributeLoader
 from sinner.typing import NumeratedFramePath, Frame
@@ -25,7 +25,7 @@ class BaseFrameHandler(AttributeLoader, ABC):
     format: str
     quality: Optional[int]
 
-    _handler: BaseImageHandler
+    _handler: BaseImageWriter
 
     def rules(self) -> Rules:
         return [
@@ -66,13 +66,13 @@ class BaseFrameHandler(AttributeLoader, ABC):
         super().__init__(parameters)
         match self.format:
             case 'png':
-                self._handler = PNGHandler()
+                self._handler = PNGWriter()
                 if self.quality:
                     self._handler.compression_level = self.quality
                 else:
                     self.quality = self._handler.compression_level  # set to default value from handler
             case 'jpg':
-                self._handler = JPEGHandler()
+                self._handler = JPEGWriter()
                 if self.quality:
                     self._handler.quality = self.quality
                 else:

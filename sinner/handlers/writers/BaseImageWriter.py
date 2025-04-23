@@ -10,26 +10,13 @@ from sinner.Singleton import SingletonABCMeta
 from sinner.typing import Frame
 
 
-class BaseImageHandler(ABC, metaclass=SingletonABCMeta):
+class BaseImageWriter(ABC, metaclass=SingletonABCMeta):
     """Базовый абстрактный класс для обработки изображений"""
 
     # Расширение файла по умолчанию
     extension: str = ""
     # Mime-тип файла
     mime_type: str = ""
-
-    @staticmethod
-    def read(path: str) -> Frame:
-        """Чтение изображения из файла"""
-        if WINDOWS:
-            image = cv2.imdecode(fromfile(path, dtype=uint8), cv2.IMREAD_UNCHANGED)
-            if len(image.shape) == 2:  # Исправляет проблему с черно-белыми изображениями
-                image = dstack([image] * 3)
-            if image.shape[2] == 4:  # Исправляет проблему с альфа-каналом
-                image = image[:, :, :3]
-            return image
-        else:
-            return cv2.imread(path)
 
     def write(self, image: Frame, path: str) -> bool:
         """Запись изображения в файл"""

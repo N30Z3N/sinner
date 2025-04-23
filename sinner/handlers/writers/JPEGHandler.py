@@ -1,9 +1,9 @@
 import cv2
 
-from sinner.handlers.image.BaseImageHandler import BaseImageHandler
+from sinner.handlers.writers.BaseImageWriter import BaseImageWriter
 
 
-class JPEGHandler(BaseImageHandler):
+class JPEGWriter(BaseImageWriter):
     """Обработчик для JPEG изображений"""
     extension = ".jpg"
     mime_type = "image/jpeg"

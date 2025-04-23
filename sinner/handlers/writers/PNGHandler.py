@@ -1,9 +1,9 @@
 import cv2
 
-from sinner.handlers.image.BaseImageHandler import BaseImageHandler
+from sinner.handlers.writers.BaseImageWriter import BaseImageWriter
 
 
-class PNGHandler(BaseImageHandler):
+class PNGWriter(BaseImageWriter):
     """Обработчик для PNG изображений"""
     extension = ".png"
     mime_type = "image/png"
