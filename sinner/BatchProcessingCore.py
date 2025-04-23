@@ -29,6 +29,7 @@ class BatchProcessingCore(AttributeLoader):
     extract_frames: bool
     keep_frames: bool
     max_memory: int
+    memory_usage: bool
     execution_threads: int
 
     parameters: Namespace
@@ -84,6 +85,11 @@ class BatchProcessingCore(AttributeLoader):
                 'parameter': 'temp-dir',
                 'default': lambda: suggest_temp_dir(self.temp_dir),
                 'help': 'Select the directory for temporary files'
+            },
+            {
+                'parameter': 'memory-usage',
+                'default': False,
+                'help': 'Enables memory usage display'
             },
             {
                 'module_help': 'The batch processing handler'
@@ -179,7 +185,8 @@ class BatchProcessingCore(AttributeLoader):
     def multi_process_frame(self, processor: BaseFrameProcessor, frames: Iterable[int], extract: Callable[[int], NumberedFrame], save: Callable[[NumberedFrame], None], progress: tqdm) -> None:  # type: ignore[type-arg]
         def process_done(future_: Future[None]) -> None:
             futures.remove(future_)
-            progress.set_postfix(self.get_postfix(len(futures)))
+            if self.memory_usage:
+                progress.set_postfix(self.get_postfix(len(futures)))
             progress.update()
 
         with ThreadPoolExecutor(max_workers=self.execution_threads) as executor:
@@ -188,7 +195,8 @@ class BatchProcessingCore(AttributeLoader):
                 future: Future[None] = executor.submit(self.process_frame, frame_num, extract, processor.process_frame, save)
                 future.add_done_callback(process_done)
                 futures.append(future)
-                progress.set_postfix(self.get_postfix(len(futures)))
+                if self.memory_usage:
+                    progress.set_postfix(self.get_postfix(len(futures)))
                 if get_mem_usage('vms', 'g') >= self.max_memory:
                     futures[:1][0].result()
                     self._statistics['limits_reaches'] += 1
