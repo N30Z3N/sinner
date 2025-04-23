@@ -38,6 +38,7 @@ class LocalProcessingModel(AttributeLoader, ProcessingModelInterface):
     bootstrap_processors: bool  # bootstrap_processors processors on startup
     _prepare_frames: bool  # True: always extract and use, False: never extract nor use, Null: newer extract, use if exists. Note: attribute can't be typed as Optional[bool] due to AttributeLoader limitations
     _detailed_metrics: bool
+    memory_usage: bool
 
     _processors: dict[str, BaseFrameProcessor]  # cached processors for gui [processor_name, processor]
     _target_handler: Optional[BaseFrameHandler] = None  # the initial handler of the target file
@@ -121,6 +122,11 @@ class LocalProcessingModel(AttributeLoader, ProcessingModelInterface):
                 'attribute': '_detailed_metrics',
                 'default': False,
                 'help': 'Enable detailed frame processing metrics'
+            },
+            {
+                'parameter': 'memory-usage',
+                'default': False,
+                'help': 'Enables memory usage display'
             },
             {
                 'module_help': 'The GUI processing handler'
@@ -414,8 +420,8 @@ class LocalProcessingModel(AttributeLoader, ProcessingModelInterface):
                     self.set_progress_index_value(next_frame, PROCESSING)
                     if len(futures) >= self.execution_threads:
                         futures[:1][0].result()
-
-                    self._status("Memory usage (resident/virtual)", self.get_mem_usage())
+                    if self.memory_usage:
+                        self._status("Memory usage (resident/virtual)", self.get_mem_usage())
 
                 if not self._event_processing.is_set():
                     executor.shutdown(wait=False, cancel_futures=True)
