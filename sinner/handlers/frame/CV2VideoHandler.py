@@ -21,6 +21,7 @@ from sinner.validators.AttributeLoader import Rules
 class CV2VideoHandler(BaseFrameHandler):
     output_fps: float
     max_memory: int
+    memory_usage: bool
 
     _statistics: dict[str, int] = {'mem_rss_max': 0, 'mem_vms_max': 0, 'limits_reaches': 0}
 
@@ -34,6 +35,11 @@ class CV2VideoHandler(BaseFrameHandler):
             {
                 'parameter': 'max-memory',  # key defined in Sin, but class can be called separately in tests
                 'default': suggest_max_memory(),
+            },
+            {
+                'parameter': 'memory-usage',
+                'default': False,
+                'help': 'Enables memory usage display'
             },
             {
                 'module_help': 'The video processing module, based on CV2 library'
@@ -77,7 +83,8 @@ class CV2VideoHandler(BaseFrameHandler):
     def get_frames_paths(self, path: str, frames_range: tuple[int | None, int | None] = (None, None)) -> List[NumeratedFramePath]:
         def write_done(future_: Future[bool]) -> None:
             futures.remove(future_)
-            progress.set_postfix(self.get_postfix(len(futures)))
+            if self.memory_usage:
+                progress.set_postfix(self.get_postfix(len(futures)))
             progress.update()
 
         start = frames_range[0] if frames_range[0] is not None else 0
@@ -110,7 +117,8 @@ class CV2VideoHandler(BaseFrameHandler):
                     future: Future[bool] = executor.submit(write_to_image, frame, filename)
                     future.add_done_callback(write_done)
                     futures.append(future)
-                    progress.set_postfix(self.get_postfix(len(futures)))
+                    if self.memory_usage:
+                        progress.set_postfix(self.get_postfix(len(futures)))
                     future_to_frame[future] = frame_index  # Keep track of which frame the future corresponds to
                     if get_mem_usage('vms', 'g') >= self.max_memory:
                         futures[:1][0].result()
