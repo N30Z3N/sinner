@@ -120,7 +120,7 @@ class BaseFrameHandler(AttributeLoader, ABC):
         :param frames_range: sets the range of returned (and extracted) frames
         :return: list of requested frames
         """
-        frames_path = sorted(glob.glob(os.path.join(glob.escape(path), '*.png')))
+        frames_path = sorted(glob.glob(os.path.join(glob.escape(path), f'*{self._handler.extension}')))
         return [(int(get_file_name(file_path)), file_path) for file_path in frames_path if is_file(file_path)][frames_range[0]:frames_range[1]]
 
     @abstractmethod
