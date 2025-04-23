@@ -31,7 +31,8 @@ result_frames: str = resolve_relative_path('data/result-frames', __file__)  # au
 source_frames: str = resolve_relative_path('data/source-frames', __file__)  # auto result name for frames swap
 tmp_dir: str = resolve_relative_path('temp', get_app_dir())
 
-state_frames_dir: str = resolve_relative_path('data/frames', __file__)
+state_frames_dir: str = resolve_relative_path('data/frames/png', __file__)
+state_frames_jpg_dir: str = resolve_relative_path('data/frames/jpg', __file__)
 images_dir: str = resolve_relative_path('data/images', __file__)
 result_mp4: str = os.path.join(tmp_dir, 'result.mp4')
 result_png: str = os.path.join(tmp_dir, 'result.png')
