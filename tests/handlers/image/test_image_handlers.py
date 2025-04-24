@@ -7,6 +7,7 @@ from pathlib import Path
 from sinner.handlers.writers.BaseImageWriter import BaseImageWriter
 from sinner.handlers.writers.JPEGHandler import JPEGWriter
 from sinner.handlers.writers.PNGHandler import PNGWriter
+from sinner.helpers import FrameHelper
 from tests.constants import tmp_dir, source_jpg
 
 
@@ -57,20 +58,11 @@ class TestJPEGHandler:
         handler2 = JPEGWriter()
         assert handler1 is handler2  # Должны быть одним и тем же объектом
 
-    def test_read_jpeg(self, test_image_path):
-        """Проверка чтения JPEG-изображения"""
-        # Использование статического метода read
-        image = JPEGWriter.read(test_image_path)
-
-        assert image is not None
-        assert len(image.shape) == 3  # Должно быть 3D (высота, ширина, каналы)
-        assert image.shape[2] == 3  # Три цветовых канала (RGB)
-
     def test_write_jpeg(self, test_image_path, test_output_path, cleanup_tmp_dir):
         """Проверка записи JPEG-изображения"""
         handler = JPEGWriter()
         # Используем статический метод read
-        image = JPEGWriter.read(test_image_path)
+        image = FrameHelper.read_from_image(test_image_path)
 
         # Проверка базовой записи
         output_path = f"{test_output_path}_jpeg"
@@ -79,7 +71,7 @@ class TestJPEGHandler:
         assert os.path.exists(f"{output_path}.jpg")
 
         # Проверка чтения записанного файла
-        written_image = handler.read(f"{output_path}.jpg")
+        written_image = FrameHelper.read_from_image(f"{output_path}.jpg")
         assert written_image is not None
         assert written_image.shape == image.shape
 
@@ -87,7 +79,7 @@ class TestJPEGHandler:
         """Проверка влияния параметра качества JPEG"""
         handler = JPEGWriter()
         # Используем статический метод read
-        image = JPEGWriter.read(test_image_path)
+        image = FrameHelper.read_from_image(test_image_path)
 
         # Запись с высоким качеством
         handler.quality = 95
@@ -108,28 +100,11 @@ class TestJPEGHandler:
 class TestPNGHandler:
     """Тесты для обработчика PNG изображений"""
 
-    def test_read_png(self, test_output_path, cleanup_tmp_dir):
-        """Проверка чтения PNG-изображения"""
-        # Сначала создаем PNG файл
-        handler = PNGWriter()
-        # Используем статический метод read
-        image = JPEGWriter.read(source_jpg)
-
-        png_path = f"{test_output_path}_png.png"
-        handler.write(image, png_path)
-
-        # Теперь читаем созданный PNG файл
-        png_image = PNGWriter.read(png_path)
-
-        assert png_image is not None
-        assert len(png_image.shape) == 3
-        assert png_image.shape[2] == 3
-
     def test_png_compression(self, test_image_path, test_output_path, cleanup_tmp_dir):
         """Проверка влияния уровня сжатия PNG"""
         handler = PNGWriter()
         # Используем статический метод read
-        image = JPEGWriter.read(test_image_path)
+        image = FrameHelper.read_from_image(test_image_path)
 
         # Запись с низким сжатием
         handler.compression_level = 1
@@ -158,14 +133,14 @@ class TestFormatConversion:
         png_handler = PNGWriter()
 
         # Используем статический метод read
-        image = JPEGWriter.read(test_image_path)
+        image = FrameHelper.read_from_image(test_image_path)
 
         # Сохраняем как PNG
         png_path = f"{test_output_path}_jpeg_to_png.png"
         png_handler.write(image, png_path)
 
         # Читаем обратно
-        png_image = PNGWriter.read(png_path)
+        png_image = FrameHelper.read_from_image(png_path)
 
         # Проверяем, что размеры совпадают
         assert png_image.shape == image.shape
@@ -178,7 +153,7 @@ class TestEdgeCases:
         """Проверка обработки расширения файла"""
         jpeg_handler = JPEGWriter()
 
-        image = JPEGWriter.read(test_image_path)
+        image = FrameHelper.read_from_image(test_image_path)
 
         # Путь без расширения
         path_without_ext = test_output_path
@@ -191,7 +166,7 @@ class TestEdgeCases:
         """Проверка создания директории при записи"""
         jpeg_handler = JPEGWriter()
 
-        image = JPEGWriter.read(test_image_path)
+        image = FrameHelper.read_from_image(test_image_path)
 
         # Путь с несуществующей директорией
         new_dir = os.path.join(tmp_dir, 'new_directory')
