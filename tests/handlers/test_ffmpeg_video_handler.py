@@ -50,7 +50,9 @@ def test_parameters(image_format, quality_value):
 @pytest.fixture
 def test_object(test_parameters):
     """Фикстура для создания тестового объекта FFMpegVideoHandler с различными параметрами"""
-    return FFMpegVideoHandler(target_path=target_mp4, parameters=test_parameters)
+    result = FFMpegVideoHandler(target_path=target_mp4, parameters=test_parameters)
+    result._run_command = ['ffmpeg', '-y', '-hide_banner', '-hwaccel', 'none', '-loglevel', 'verbose', '-progress', 'pipe:1']  # -hwaccel auto may cause issues with jpeg input
+    return result
 
 
 @pytest.fixture
@@ -198,7 +200,6 @@ def test_result(test_object, image_format):
     if image_format == 'png':
         assert test_object.result(from_dir=state_frames_dir, filename=result_path) is True
     elif image_format == 'jpg':
-        test_object._run_command = ['ffmpeg', '-y', '-hide_banner', '-hwaccel', 'none', '-loglevel', 'verbose', '-progress', 'pipe:1']  # -hwaccel auto may cause issues with jpeg input
         assert test_object.result(from_dir=state_frames_jpg_dir, filename=result_path) is True
     assert os.path.exists(result_path)
 
