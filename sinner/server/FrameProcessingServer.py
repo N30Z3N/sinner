@@ -40,6 +40,7 @@ class FrameProcessingServer(AttributeLoader):
     _prepare_frames: bool  # True: always extract and use, False: never extract nor use, Null: newer extract, use if exists. Note: attribute can't be typed as Optional[bool] due to AttributeLoader limitations
     _detailed_metrics: bool
     _scale_quality: int  # the processed frame size scale in percent
+    _buffer_size: int  # Memory used for frame buffer, bytes
     _reply_endpoint: str
     _pub_endpoint: str
 
@@ -120,6 +121,12 @@ class FrameProcessingServer(AttributeLoader):
                 'help': 'Enable detailed frame processing metrics'
             },
             {
+                'parameter': ['memory-buffer-size', 'memory-buffer', 'buffer-size'],
+                'attribute': '_buffer_size',
+                'default': 0,
+                'help': 'Set memory buffer size for processed frames (in bytes)'
+            },
+            {
                 'parameter': ['endpoint', 'reply-endpoint'],
                 'attribute': '_reply_endpoint',
                 'default': "tcp://127.0.0.1:5555",
@@ -160,7 +167,7 @@ class FrameProcessingServer(AttributeLoader):
         if self.bootstrap_processors:
             self._processors = self.processors
 
-        self.TimeLine = FrameTimeLine(temp_dir=self.temp_dir)
+        self.TimeLine = FrameTimeLine(temp_dir=self.temp_dir, buffer_size=self._buffer_size)
         self._event_processing = Event()
         self._event_rewind = Event()
 

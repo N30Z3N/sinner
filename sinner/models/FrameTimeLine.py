@@ -24,9 +24,9 @@ class FrameTimeLine:
     _last_returned_index: Optional[int] = None
     _temp_dir: str
 
-    def __init__(self, temp_dir: str) -> None:
+    def __init__(self, temp_dir: str, buffer_size: int = 0) -> None:
         self._temp_dir = temp_dir
-        self._FrameBuffer = FrameMemoryBuffer(self._temp_dir, 1024 * 1024 * 1024, True)
+        self._FrameBuffer = FrameMemoryBuffer(self._temp_dir, buffer_size, True)
 
     def load(self, source_name: Optional[str] = None, target_name: Optional[str] = None, frame_time: float = 0, start_frame: int = 0, end_frame: int = 0) -> Self:
         """Loads source/target pair to the timeline"""
