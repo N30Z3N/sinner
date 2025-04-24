@@ -34,6 +34,7 @@ class ProcessingModelInterface(ABC):
     _scale_quality: int  # the processed frame size scale from 0 to 100
     _enable_sound: bool
     _audio_backend: str  # the current audio backend class name, used to create it in the factory
+    _buffer_size: int  # Memory used for frame buffer, bytes
 
     # internal/external objects
     MetaData: Optional[MediaMetaData] = None  # dataclass to store target mediainfo

@@ -129,6 +129,12 @@ class LocalProcessingModel(AttributeLoader, ProcessingModelInterface):
                 'help': 'Enables memory usage display'
             },
             {
+                'parameter': ['memory-buffer-size', 'memory-buffer', 'buffer-size'],
+                'attribute': '_buffer_size',
+                'default': 0,
+                'help': 'Set memory buffer size for processed frames (in bytes)'
+            },
+            {
                 'module_help': 'The GUI processing handler'
             }
         ]
@@ -140,7 +146,7 @@ class LocalProcessingModel(AttributeLoader, ProcessingModelInterface):
         if self.bootstrap_processors:
             self._processors = self.processors
 
-        self.TimeLine = FrameTimeLine(temp_dir=self.temp_dir).load(source_name=self._source_path, target_name=self._target_path, frame_time=self.metadata.frame_time, start_frame=1, end_frame=self.metadata.frames_count)
+        self.TimeLine = FrameTimeLine(temp_dir=self.temp_dir, buffer_size=self._buffer_size).load(source_name=self._source_path, target_name=self._target_path, frame_time=self.metadata.frame_time, start_frame=1, end_frame=self.metadata.frames_count)
         self.Player = PygameFramePlayer(width=self.metadata.resolution[0], height=self.metadata.resolution[1], caption='sinner player', on_close_event=on_close_event)
 
         if self._enable_sound:
@@ -149,7 +155,7 @@ class LocalProcessingModel(AttributeLoader, ProcessingModelInterface):
         self.progress_control = progress_control
         self._status = status_callback
         self._status("Time position", seconds_to_hmsms(0))
-        self._status("Frame position", f'{self.position.get()}/{self.metadata.frames_count-1}')
+        self._status("Frame position", f'{self.position.get()}/{self.metadata.frames_count - 1}')
 
         self._event_processing = Event()
         self._event_playback = Event()
@@ -221,7 +227,7 @@ class LocalProcessingModel(AttributeLoader, ProcessingModelInterface):
         else:
             self.update_preview()
             self._status("Time position", seconds_to_hmsms(0))
-            self._status("Frame position", f'{self.position.get()}/{self.metadata.frames_count-1}')
+            self._status("Frame position", f'{self.position.get()}/{self.metadata.frames_count - 1}')
 
     @property
     def source_dir(self) -> Optional[str]:
@@ -318,7 +324,7 @@ class LocalProcessingModel(AttributeLoader, ProcessingModelInterface):
         if self.AudioPlayer:
             self.AudioPlayer.position = int(frame_position * self.metadata.frame_time)
         self._status("Time position", seconds_to_hmsms(self.metadata.frame_time * (frame_position - 1)))
-        self._status("Frame position", f'{self.position.get()}/{self.metadata.frames_count-1}')
+        self._status("Frame position", f'{self.position.get()}/{self.metadata.frames_count - 1}')
 
     def player_start(self, start_frame: int, on_stop_callback: Optional[Callable[..., Any]] = None) -> None:
         self._on_stop_callback = on_stop_callback
@@ -503,7 +509,7 @@ class LocalProcessingModel(AttributeLoader, ProcessingModelInterface):
                                     self.position.set(self.TimeLine.last_returned_index)
                                 if self.TimeLine.last_returned_index:
                                     self._status("Time position", seconds_to_hmsms(self.TimeLine.last_returned_index * self.metadata.frame_time))
-                                    self._status("Frame position", f'{self.position.get()}/{self.metadata.frames_count-1}')
+                                    self._status("Frame position", f'{self.position.get()}/{self.metadata.frames_count - 1}')
                     loop_time = time.perf_counter() - start_time  # time for the current loop, sec
                     sleep_time = self.metadata.frame_time - loop_time  # time to wait for the next loop, sec
                     if sleep_time > 0:
