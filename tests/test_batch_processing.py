@@ -17,47 +17,6 @@ from tests.constants import target_png, source_jpg, target_mp4, source_target_pn
 threads_count = multiprocessing.cpu_count()
 
 
-# Добавьте эту фикстуру в начало файла, после импортов
-@pytest.fixture(scope="session", autouse=True)
-def patch_ffmpeg_hwaccel():
-    """
-    Патчит FFMpegVideoHandler._run_command, заменяя -hwaccel auto на -hwaccel none
-    для предотвращения проблем в тестовом окружении.
-    """
-    try:
-        # Импортируем класс FFMpegVideoHandler
-        from sinner.handlers.frame.FFMpegVideoHandler import FFMpegVideoHandler
-
-        # Сохраняем оригинальное значение для последующего восстановления
-        original_run_command = FFMpegVideoHandler._run_command.copy()
-
-        # Изменяем параметр -hwaccel с auto на none
-        new_command = original_run_command.copy()
-        hwaccel_index = new_command.index('-hwaccel') + 1
-        if hwaccel_index < len(new_command):
-            new_command[hwaccel_index] = 'none'
-            FFMpegVideoHandler._run_command = new_command
-            print("FFMpegVideoHandler: параметр -hwaccel изменен с 'auto' на 'none'")
-    except ImportError:
-        # Если модуль не может быть импортирован, значит он не используется в тестах
-        print("FFMpegVideoHandler: модуль не найден, патч не применен")
-    except Exception as e:
-        # В случае других ошибок
-        print(f"FFMpegVideoHandler: ошибка при применении патча: {e}")
-
-    # Позволяем тестам выполниться
-    yield
-
-    # После выполнения тестов пытаемся восстановить оригинальное значение
-    try:
-        from sinner.handlers.frame.FFMpegVideoHandler import FFMpegVideoHandler
-        FFMpegVideoHandler._run_command = original_run_command
-        print("FFMpegVideoHandler: восстановлено исходное значение _run_command")
-    except:
-        # Если не удалось восстановить, это не критично
-        pass
-
-
 def setup():
     #  clean previous results, if exists
     if os.path.exists(tmp_dir):

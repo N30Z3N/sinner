@@ -21,8 +21,6 @@ class FFMpegVideoHandler(BaseFrameHandler):
     ffmpeg_resulting_parameters: str
     ffmpeg_quality_parameter: list[str]
 
-    _run_command = ['ffmpeg', '-y', '-hide_banner', '-hwaccel', 'auto', '-loglevel', 'verbose', '-progress', 'pipe:1']
-
     def rules(self) -> Rules:
         return [
             {
@@ -41,7 +39,7 @@ class FFMpegVideoHandler(BaseFrameHandler):
         ]
 
     def run(self, args: List[str]) -> bool:
-        command = self._run_command
+        command = ['ffmpeg', '-y', '-hide_banner', '-hwaccel', 'auto', '-loglevel', 'verbose', '-progress', 'pipe:1']
         command.extend(args)
         app_logger.info(' '.join(command))
         try:

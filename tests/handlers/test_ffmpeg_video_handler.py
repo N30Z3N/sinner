@@ -51,7 +51,7 @@ def test_parameters(image_format, quality_value):
 def test_object(test_parameters):
     """Фикстура для создания тестового объекта FFMpegVideoHandler с различными параметрами"""
     result = FFMpegVideoHandler(target_path=target_mp4, parameters=test_parameters)
-    result._run_command = ['ffmpeg', '-y', '-hide_banner', '-hwaccel', 'none', '-loglevel', 'verbose', '-progress', 'pipe:1']  # -hwaccel auto may cause issues with jpeg input
+    # result._run_command = ['ffmpeg', '-y', '-hide_banner', '-hwaccel', 'none', '-loglevel', 'verbose', '-progress', 'pipe:1']  # -hwaccel auto may cause issues with jpeg input
     return result
 
 
