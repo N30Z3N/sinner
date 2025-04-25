@@ -64,8 +64,9 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
                 self._frame_sizes[frame.index] = frame_size
                 self._current_buffer_size += frame_size
 
-        # Асинхронно сохраняем на диск
-        self._disk_write_executor.submit(self._save_frame_to_disk, frame)
+            self._disk_write_executor.submit(self._save_frame_to_disk, frame)  # Асинхронно сохраняем на диск
+        else:
+            self._save_frame_to_disk(frame)  # Если буфер отключён, то записываем синхронно
 
     def _save_frame_to_disk(self, frame: NumberedFrame) -> None:
         """Save frame to disk asynchronously."""
