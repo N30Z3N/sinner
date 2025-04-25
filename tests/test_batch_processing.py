@@ -193,7 +193,7 @@ def test_set_execution_provider(capsys) -> None:
 
 
 def test_reprocess_lost_frames() -> None:
-    case_temp_dir = resolve_relative_path('temp/DummyProcessor/frames/source.jpg', get_app_dir())
+    case_temp_dir = resolve_relative_path('temp/DummyProcessor/png/source.jpg', get_app_dir())
     assert os.path.exists(case_temp_dir) is False
     params = Parameters(f'--target-path="{state_frames_dir}" --source-path="{source_jpg}" --output-path="{result_mp4}" --execution-treads={threads_count}')
 
