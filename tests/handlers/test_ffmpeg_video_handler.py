@@ -1,11 +1,13 @@
 import os
 import shutil
+import subprocess
 from argparse import Namespace
-from typing import Iterator
+from typing import Iterator, List
 
 import pytest
 from numpy import ndarray
 
+from sinner.AppLogger import app_logger
 from sinner.handlers.frame.FFMpegVideoHandler import FFMpegVideoHandler
 from sinner.utilities import resolve_relative_path
 from tests.constants import TARGET_FPS, TARGET_FC, FRAME_SHAPE, tmp_dir, target_mp4, result_mp4, state_frames_dir, TARGET_RESOLUTION, broken_mp4, BROKEN_FC, state_frames_jpg_dir
@@ -51,7 +53,22 @@ def test_parameters(image_format, quality_value):
 def test_object(test_parameters):
     """Фикстура для создания тестового объекта FFMpegVideoHandler с различными параметрами"""
     result = FFMpegVideoHandler(target_path=target_mp4, parameters=test_parameters)
-    # result._run_command = ['ffmpeg', '-y', '-hide_banner', '-hwaccel', 'none', '-loglevel', 'verbose', '-progress', 'pipe:1']  # -hwaccel auto may cause issues with jpeg input
+
+    # Patch the run method to use 'none' instead of 'auto' for hwaccel
+    def patched_run(args: List[str]) -> bool:
+        command = ['ffmpeg', '-y', '-hide_banner', '-hwaccel', 'none', '-loglevel', 'verbose', '-progress', 'pipe:1']
+        command.extend(args)
+        app_logger.info(' '.join(command))
+        try:
+            subprocess.check_output(command, stderr=subprocess.STDOUT)
+            return True
+        except Exception as exception:
+            app_logger.exception(exception)
+            pass
+        return False
+
+    result.run = patched_run
+
     return result
 
 
