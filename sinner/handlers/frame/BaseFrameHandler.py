@@ -9,7 +9,7 @@ from sinner.handlers.writers.JPEGHandler import JPEGWriter
 from sinner.handlers.writers.PNGHandler import PNGWriter
 from sinner.models.NumberedFrame import NumberedFrame
 from sinner.validators.AttributeLoader import Rules, AttributeLoader
-from sinner.typing import NumeratedFramePath, Frame
+from sinner.typing import NumeratedFramePath
 from sinner.utilities import load_class, get_file_name, is_file, normalize_path
 
 

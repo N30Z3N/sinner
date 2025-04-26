@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 
 import cv2
-from numpy import fromfile, uint8, dstack
 from psutil import WINDOWS
 
 from sinner.Singleton import SingletonABCMeta
