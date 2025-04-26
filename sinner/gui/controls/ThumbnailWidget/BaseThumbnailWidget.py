@@ -190,7 +190,7 @@ class BaseThumbnailWidget(Frame, ABC):
         img.save(thumb_path, 'PNG', pnginfo=metadata_dict)
 
     @staticmethod
-    def get_thumbnail(image: Image, size: int) -> Image:
+    def get_thumbnail(image: Image.Image, size: int) -> Image.Image:
         """
         Crops an image to a square with the given size, centering the crop around the middle of the image.
         :param image: A PIL Image instance.

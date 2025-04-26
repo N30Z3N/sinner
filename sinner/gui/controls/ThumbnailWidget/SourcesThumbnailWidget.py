@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Callable, Optional, Any
 
 from PIL import Image
 
@@ -27,10 +27,11 @@ class SourcesThumbnailWidget(BaseThumbnailWidget):
         if not thumbnail:
             with Image.open(source_path) as img:
                 thumbnail = self.get_thumbnail(img, self.thumbnail_size)
-                pixel_count = img.size[0] * img.size[1]
+                pixel_count: Optional[int] = img.size[0] * img.size[1]
             self.set_cached_thumbnail(source_path, thumbnail, caption=get_file_name(source_path), pixel_count=pixel_count)
+        pixel_count_raw: Any = thumbnail.info.get("pixel_count")
+        pixel_count = int(pixel_count_raw) if pixel_count_raw else None
         caption = thumbnail.info.get("caption") or get_file_name(source_path)
-        pixel_count = int(thumbnail.info.get("pixel_count")) if thumbnail.info.get("pixel_count") else None
         if pixel_count is None:
             with Image.open(source_path) as img:
                 pixel_count = img.size[0] * img.size[1]

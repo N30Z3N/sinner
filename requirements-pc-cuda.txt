@@ -1,29 +1,30 @@
-# this file contains package requirements list for linux/windows PC with CPU and CUDA support for CUDA 11.8 drivers
+# this index contains pytorch packages with CUDA support for CUDA 12.8 drivers.
+--extra-index-url https://download.pytorch.org/whl/cu128
 
---extra-index-url https://download.pytorch.org/whl/cu121
+# the most important packages
+torch==2.7.0+cu128
+torchvision==0.22.0+cu128
+sympy>=1.13.1
+tensorflow>=2.13.0
+onnx>=1.16.2
+onnxruntime-gpu>=1.20.1
 
+# the less important packages
+colorama>=0.4.6
+customtkinter>=5.2.0
+future==0.18.3
+gfpgan==1.3.8
+insightface==0.7.3
+moviepy>=1.0.4
 numpy>=1.24.3
 opencv-python>=4.8.0.74
-onnx>=1.16.2
-insightface==0.7.3
-psutil>=5.9.5
-tk==0.1.0
-customtkinter>=5.2.0
+pathvalidate
 pillow>=10.0.0
 protobuf>=4.24.1
-tqdm>=4.65.0
-gfpgan==1.3.8
-tensorflow>=2.13.0
-future==0.18.3
-colorama>=0.4.6
-sympy==1.12
-new-basicsr
-torch==2.1.2
-torchvision==0.16.2
-onnxruntime-gpu>=1.20.1
-pyvirtualcam
-pathvalidate
+psutil>=5.9.5
 pygame
-moviepy>=1.0.4
 python-vlc
+pyvirtualcam
+tk==0.1.0
+tqdm>=4.65.0
 zmq

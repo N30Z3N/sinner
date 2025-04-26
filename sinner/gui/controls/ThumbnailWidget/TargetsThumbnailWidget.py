@@ -1,5 +1,5 @@
 from argparse import Namespace
-from typing import Callable, Tuple, Optional
+from typing import Callable, Tuple, Optional, Any
 
 import cv2
 from PIL import Image
@@ -35,7 +35,8 @@ class TargetsThumbnailWidget(BaseThumbnailWidget):
         thumbnail = self.get_cached_thumbnail(source_path)
         if thumbnail:
             caption = thumbnail.info.get("caption")
-            pixel_count = int(thumbnail.info.get("pixel_count")) if thumbnail.info.get("pixel_count") else None
+            pixel_count_raw: Any = thumbnail.info.get("pixel_count")
+            pixel_count = int(pixel_count_raw) if pixel_count_raw else None
         else:
             if is_video(source_path):
                 frame, caption, pixel_count = self.get_frame(source_path)
