@@ -11,7 +11,7 @@ if sys.version_info < (3, 10):
     quit()
 
 try:  # fixes incompatibility issue with outdated basicsr package
-    import torchvision.transforms.functional_tensor
+    import torchvision.transforms.functional_tensor  # noqa: F401
 except ImportError:
     try:
         import torchvision.transforms.functional as functional
