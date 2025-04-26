@@ -10,7 +10,17 @@ if sys.version_info < (3, 10):
     print('Python version is not supported - please upgrade to 3.10 or higher.')
     quit()
 
-from sinner.AppLogger import setup_logging # noqa: E402
+try:  # fixes incompatibility issue with outdated basicsr package
+    import torchvision.transforms.functional_tensor  # noqa: F401
+except ImportError:
+    try:
+        import torchvision.transforms.functional as functional
+
+        sys.modules["torchvision.transforms.functional_tensor"] = functional
+    except ImportError:
+        pass  # shrug...
+
+from sinner.AppLogger import setup_logging  # noqa: E402
 import signal  # noqa: E402
 from argparse import Namespace  # noqa: E402
 from sinner.Benchmark import Benchmark  # noqa: E402
