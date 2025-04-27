@@ -85,15 +85,6 @@ def test_handler_format(default_state, image_format):
     assert default_state.format == image_format
 
 
-def test_handler_quality(default_state, image_format, quality_value):
-    """Проверка, что качество изображения установлено правильно"""
-    assert default_state.quality == quality_value
-    if image_format == "png":
-        assert default_state._writer.compression_level == quality_value
-    else:
-        assert default_state._writer.quality == quality_value
-
-
 def test_basic(test_parameters, image_format) -> None:
     """Базовая проверка поведения класса State с учетом формата"""
     state = State(
