@@ -1,7 +1,5 @@
 # helper methods to work with frames entity
 
-import os.path
-from pathlib import Path
 import cv2
 from numpy import fromfile, uint8, full, dstack
 from psutil import WINDOWS

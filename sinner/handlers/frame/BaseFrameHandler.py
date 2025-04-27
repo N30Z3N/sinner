@@ -5,8 +5,6 @@ from argparse import Namespace
 from typing import List, Self, Optional
 
 from sinner.handlers.writers.BaseImageWriter import BaseImageWriter
-from sinner.handlers.writers.JPEGWriter import JPEGWriter
-from sinner.handlers.writers.PNGWriter import PNGWriter
 from sinner.models.NumberedFrame import NumberedFrame
 from sinner.validators.AttributeLoader import Rules, AttributeLoader
 from sinner.typing import NumeratedFramePath
