@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List, Optional, ClassVar, Self
 
 from sinner.handlers.writers.BaseImageWriter import BaseImageWriter
-from sinner.helpers.FrameHelper import write_to_image, read_from_image
+from sinner.helpers.FrameHelper import read_from_image
 from sinner.models.NumberedFrame import NumberedFrame
 from sinner.models.framebuffer.FrameBufferInterface import FrameBufferInterface
 from sinner.utilities import is_absolute_path, path_exists, get_file_name, normalize_path
@@ -98,7 +98,7 @@ class FrameDirectoryBuffer(FrameBufferInterface):
                 return
                 # raise Exception(f"{self.__class__.__name__} isn't in loaded state. Call load() method properly first!")
 
-            if not write_to_image(frame.frame, self.get_frame_processed_name(frame)):
+            if not self._writer.write(frame.frame, self.get_frame_processed_name(frame)):
                 raise Exception(f"Error saving frame: {self.get_frame_processed_name(frame)}")
             self._indices.append(frame.index)
 

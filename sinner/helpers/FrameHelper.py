@@ -28,16 +28,6 @@ def read_from_image(path: str) -> Frame:
         return cv2.imread(path)
 
 
-def write_to_image(image: Frame, path: str) -> bool:
-    Path(os.path.dirname(path)).mkdir(parents=True, exist_ok=True)  # todo: can be replaced with os.makedirs
-    if WINDOWS:  # issue #511
-        is_success, im_buf_arr = cv2.imencode(".png", image)
-        im_buf_arr.tofile(path)
-        return is_success
-    else:
-        return cv2.imwrite(path, image)
-
-
 def scale(frame: Frame, scale_: float = 0.2) -> Frame:
     if 1 == scale_:
         return frame

@@ -6,7 +6,6 @@ import psutil
 
 from sinner.AppLogger import app_logger
 from sinner.handlers.writers.BaseImageWriter import BaseImageWriter
-from sinner.helpers.FrameHelper import write_to_image
 from sinner.models.NumberedFrame import NumberedFrame
 from sinner.models.framebuffer.FrameDirectoryBuffer import FrameDirectoryBuffer
 
@@ -74,7 +73,7 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
         try:
             frame_path = self.get_frame_processed_name(frame)
 
-            if not write_to_image(frame.frame, frame_path):
+            if not self._writer.write(frame.frame, frame_path):
                 app_logger.error(f"Failed to save frame {frame.index} to disk: {frame_path}")
                 return
 

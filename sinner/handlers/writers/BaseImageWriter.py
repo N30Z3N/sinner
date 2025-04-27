@@ -23,7 +23,7 @@ class BaseImageWriter(ABC, metaclass=SingletonABCMeta):
     def write(self, image: Frame, path: str) -> bool:
         """Запись изображения в файл"""
         # Создание директорий, если они не существуют
-        Path(os.path.dirname(path)).mkdir(parents=True, exist_ok=True)
+        Path(os.path.dirname(path)).mkdir(parents=True, exist_ok=True)  # todo: can be replaced with os.makedirs
 
         # Проверка, что расширение файла соответствует формату
         if not path.lower().endswith(self.extension):
