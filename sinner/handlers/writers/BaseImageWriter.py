@@ -1,7 +1,7 @@
 import os
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TypeVar
+from typing import TypeVar, Optional, Type
 
 import cv2
 from psutil import WINDOWS
@@ -65,7 +65,7 @@ class BaseImageWriter(ABC, metaclass=SingletonABCMeta):
         pass
 
     @classmethod
-    def create(cls, _format: str = 'png', quality: int = None) -> T:
+    def create(cls: Type[T], _format: str = 'png', quality: Optional[int] = None) -> 'BaseImageWriter':
         """
         Фабричный метод для создания соответствующего writer по формату изображения
 
@@ -83,8 +83,7 @@ class BaseImageWriter(ABC, metaclass=SingletonABCMeta):
         from sinner.handlers.writers.PNGWriter import PNGWriter
 
         if _format.lower() == 'png':
-            writer = PNGWriter()
-            return writer
+            writer: BaseImageWriter = PNGWriter()
         elif _format.lower() in ['jpg', 'jpeg']:
             writer = JPEGWriter()
         else:
