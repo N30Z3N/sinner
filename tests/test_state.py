@@ -81,7 +81,7 @@ def test_raise_on_relative_path() -> None:
 
 def test_handler_format(default_state, image_format):
     """Проверка, что формат изображения установлен правильно"""
-    assert default_state._handler.extension.endswith(image_format)
+    assert default_state._writer.extension.endswith(image_format)
     assert default_state.format == image_format
 
 
@@ -89,9 +89,9 @@ def test_handler_quality(default_state, image_format, quality_value):
     """Проверка, что качество изображения установлено правильно"""
     assert default_state.quality == quality_value
     if image_format == "png":
-        assert default_state._handler.compression_level == quality_value
+        assert default_state._writer.compression_level == quality_value
     else:
-        assert default_state._handler.quality == quality_value
+        assert default_state._writer.quality == quality_value
 
 
 def test_basic(test_parameters, image_format) -> None:
@@ -121,7 +121,7 @@ def test_basic(test_parameters, image_format) -> None:
     # Проверка, что сгенерированное имя файла содержит правильное расширение
     processed_name = state.get_frame_processed_name(NumberedFrame(100, EmptyFrame))
     assert processed_name.endswith(f"100.{image_format}")
-    assert processed_name.endswith(state._handler.extension)
+    assert processed_name.endswith(state._writer.extension)
 
 
 def test_state_names_generation(test_parameters, image_format) -> None:
@@ -154,7 +154,7 @@ def test_state_names_generation(test_parameters, image_format) -> None:
 def test_states(default_state, image_format) -> None:
     """Проверка различных состояний процесса обработки с учетом формата"""
     state = default_state
-    extension = state._handler.extension
+    extension = state._writer.extension
     assert extension.endswith(image_format)
 
     assert state.zfill_length == 2
@@ -206,7 +206,7 @@ def test_final_check_ok(default_state, image_format):
 def test_final_check_fail_state(default_state, image_format):
     """Проверка обнаружения отсутствующего кадра"""
     state = default_state
-    extension = state._handler.extension
+    extension = state._writer.extension
 
     # Создаем и сохраняем тестовые кадры, пропуская один
     frame = create((10, 10))
@@ -222,7 +222,7 @@ def test_final_check_fail_state(default_state, image_format):
 def test_final_check_fail_zero_files(default_state, image_format):
     """Проверка обнаружения пустого файла"""
     state = default_state
-    extension = state._handler.extension
+    extension = state._writer.extension
 
     # Создаем и сохраняем тестовые кадры
     frame = create((10, 10))
@@ -276,8 +276,8 @@ def test_different_formats_compatibility():
     assert jpg_path.endswith(".jpg")
 
     # Дополнительно проверяем, что обработчики имеют правильные расширения
-    assert png_state._handler.extension == ".png"
-    assert jpg_state._handler.extension == ".jpg"
+    assert png_state._writer.extension == ".png"
+    assert jpg_state._writer.extension == ".jpg"
 
     # Проверяем размеры файлов
     png_size = os.path.getsize(png_path)

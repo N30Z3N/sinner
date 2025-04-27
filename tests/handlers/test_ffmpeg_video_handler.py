@@ -80,7 +80,7 @@ def broken_object(test_parameters):
 
 def test_handler_format(test_object, image_format):
     """Проверка, что формат изображения установлен правильно"""
-    assert test_object._handler.extension.endswith(image_format)
+    assert test_object._writer.extension.endswith(image_format)
     assert test_object.format == image_format
 
 
@@ -88,9 +88,9 @@ def test_handler_quality(test_object, image_format, quality_value):
     """Проверка, что качество изображения установлено правильно"""
     assert test_object.quality == quality_value
     if image_format == 'png':
-        assert test_object._handler.compression_level == quality_value
+        assert test_object._writer.compression_level == quality_value
     else:
-        assert test_object._handler.quality == quality_value
+        assert test_object._writer.quality == quality_value
 
 
 def test_ffmpeg_quality_parameters(test_object, image_format):

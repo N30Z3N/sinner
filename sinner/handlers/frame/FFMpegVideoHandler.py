@@ -111,7 +111,7 @@ class FFMpegVideoHandler(BaseFrameHandler):
         Path(path).mkdir(parents=True, exist_ok=True)
         start_frame = frames_range[0] if frames_range[0] is not None else 0
         stop_frame = frames_range[1] if frames_range[1] is not None else self.fc - 1
-        command = ['-i', self._target_path, '-vf', f"select='between(n,{start_frame},{stop_frame})'", '-vsync', '0', '-pix_fmt', 'rgb24', '-frame_pts', '1', os.path.join(path, f'%{filename_length}d{self._handler.extension}')]
+        command = ['-i', self._target_path, '-vf', f"select='between(n,{start_frame},{stop_frame})'", '-vsync', '0', '-pix_fmt', 'rgb24', '-frame_pts', '1', os.path.join(path, f'%{filename_length}d{self._writer.extension}')]
         command.extend(self.ffmpeg_quality_parameter)
         self.run(command)
         return super().get_frames_paths(path)
@@ -127,7 +127,7 @@ class FFMpegVideoHandler(BaseFrameHandler):
         app_logger.info(f"Resulting frames from {from_dir} to {filename} with {self.output_fps} FPS")
         filename_length = len(str(self.fc))  # a way to determine frame names length
         Path(os.path.dirname(filename)).mkdir(parents=True, exist_ok=True)
-        command = ['-framerate', str(self.output_fps), '-i', os.path.join(from_dir, f'%0{filename_length}d{self._handler.extension}')]
+        command = ['-framerate', str(self.output_fps), '-i', os.path.join(from_dir, f'%0{filename_length}d{self._writer.extension}')]
         command.extend(self.ffmpeg_resulting_parameters.split(' '))
         command.extend(['-r', str(self.output_fps), filename])
         if audio_target:

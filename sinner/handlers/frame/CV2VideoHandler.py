@@ -112,9 +112,9 @@ class CV2VideoHandler(BaseFrameHandler):
                     ret, frame = capture.read()
                     if not ret:
                         break
-                    filename: str = os.path.join(path, str(frame_index).zfill(filename_length) + self._handler.extension)
+                    filename: str = os.path.join(path, str(frame_index).zfill(filename_length) + self._writer.extension)
                     # Submit only the write_to_image function to the executor, excluding it processing time from the loop
-                    future: Future[bool] = executor.submit(self._handler.write, frame, filename)
+                    future: Future[bool] = executor.submit(self._writer.write, frame, filename)
                     future.add_done_callback(write_done)
                     futures.append(future)
                     if self.memory_usage:
@@ -134,7 +134,7 @@ class CV2VideoHandler(BaseFrameHandler):
 
                 capture.release()
 
-        frames_path = sorted(glob.glob(os.path.join(glob.escape(path), f'*{self._handler.extension}')))
+        frames_path = sorted(glob.glob(os.path.join(glob.escape(path), f'*{self._writer.extension}')))
         return [(int(get_file_name(file_path)), file_path) for file_path in frames_path if is_file(file_path)]
 
     def get_mem_usage(self) -> str:
@@ -176,7 +176,7 @@ class CV2VideoHandler(BaseFrameHandler):
             app_logger.info('Sound copying is not supported in CV2VideoHandler')
         try:
             Path(os.path.dirname(filename)).mkdir(parents=True, exist_ok=True)
-            frame_files = glob.glob(os.path.join(glob.escape(from_dir), f'*{self._handler.extension}'))
+            frame_files = glob.glob(os.path.join(glob.escape(from_dir), f'*{self._writer.extension}'))
             first_frame = read_from_image(frame_files[0])
             height, width, channels = first_frame.shape
             fourcc = self.suggest_codec()

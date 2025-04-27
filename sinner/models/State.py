@@ -25,7 +25,7 @@ class State(AttributeLoader):
     processor_name: str
     _temp_dir: str
     _zfill_length: int | None
-    _handler: BaseImageWriter
+    _writer: BaseImageWriter
 
     final_check_state: bool = True
     final_check_empty: bool = True
@@ -68,20 +68,7 @@ class State(AttributeLoader):
         self.frames_count = frames_count
         self.processor_name = processor_name
         self._zfill_length = None
-
-        match self.format:
-            case 'png':
-                self._handler = PNGWriter()
-                if self.quality:
-                    self._handler.compression_level = self.quality
-                else:
-                    self.quality = self._handler.compression_level  # set to default value from handler
-            case 'jpg':
-                self._handler = JPEGWriter()
-                if self.quality:
-                    self._handler.quality = self.quality
-                else:
-                    self.quality = self._handler.quality  # set to default value from handler
+        self._writer = BaseImageWriter.create(self.format, self.quality)
 
         state: List[Dict[str, Any]] = [
             {"Source": getattr(self, "source_path", "None")},
@@ -138,7 +125,7 @@ class State(AttributeLoader):
         self.make_path(self._path)
 
     def save_temp_frame(self, frame: NumberedFrame) -> None:
-        if not self._handler.write(frame.frame, self.get_frame_processed_name(frame)):
+        if not self._writer.write(frame.frame, self.get_frame_processed_name(frame)):
             raise Exception(f"Error saving frame: {self.get_frame_processed_name(frame)}")
 
     #  Checks if some frame already processed
@@ -156,7 +143,7 @@ class State(AttributeLoader):
         img_files = []
         with os.scandir(self.path) as entries:
             for entry in entries:
-                if entry.is_file() and entry.name.endswith(self._handler.extension):
+                if entry.is_file() and entry.name.endswith(self._writer.extension):
                     img_files.append(entry.path)
         return img_files
 
@@ -165,7 +152,7 @@ class State(AttributeLoader):
         indices = []
         with os.scandir(self.path) as entries:
             for entry in entries:
-                if entry.is_file() and entry.name.endswith(self._handler.extension):
+                if entry.is_file() and entry.name.endswith(self._writer.extension):
                     indices.append((int(get_file_name(entry.name))))
         return indices
 
@@ -182,9 +169,9 @@ class State(AttributeLoader):
     #  Returns a processed file name for an unprocessed frame index
     def get_frame_processed_name(self, frame: NumberedFrame) -> str:
         if frame.name:
-            filename = frame.name + self._handler.extension
+            filename = frame.name + self._writer.extension
         else:
-            filename = str(frame.index).zfill(self.zfill_length) + self._handler.extension
+            filename = str(frame.index).zfill(self.zfill_length) + self._writer.extension
         return str(os.path.join(self.path, filename))
 
     @property

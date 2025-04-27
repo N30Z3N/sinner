@@ -25,7 +25,7 @@ class BaseFrameHandler(AttributeLoader, ABC):
     format: str
     quality: Optional[int]
 
-    _handler: BaseImageWriter
+    _writer: BaseImageWriter
 
     def rules(self) -> Rules:
         return [
@@ -64,21 +64,8 @@ class BaseFrameHandler(AttributeLoader, ABC):
     def __init__(self, target_path: str, parameters: Namespace):
         self._target_path = str(normalize_path(target_path))
         super().__init__(parameters)
-        match self.format:
-            case 'png':
-                self._handler = PNGWriter()
-                if self.quality:
-                    self._handler.compression_level = self.quality
-                else:
-                    self.quality = self._handler.compression_level  # set to default value from handler
-            case 'jpg':
-                self._handler = JPEGWriter()
-                if self.quality:
-                    self._handler.quality = self.quality
-                else:
-                    self.quality = self._handler.quality  # set to default value from handler
-
-            # app_logger.info(f"Handle frames for {self._target_path} ({self.fc} frame(s)/{self.fps} FPS)")
+        self._writer = BaseImageWriter.create(self.format, self.quality)
+        # app_logger.info(f"Handle frames for {self._target_path} ({self.fc} frame(s)/{self.fps} FPS)")
 
     @property
     @abstractmethod
@@ -120,7 +107,7 @@ class BaseFrameHandler(AttributeLoader, ABC):
         :param frames_range: sets the range of returned (and extracted) frames
         :return: list of requested frames
         """
-        frames_path = sorted(glob.glob(os.path.join(glob.escape(path), f'*{self._handler.extension}')))
+        frames_path = sorted(glob.glob(os.path.join(glob.escape(path), f'*{self._writer.extension}')))
         return [(int(get_file_name(file_path)), file_path) for file_path in frames_path if is_file(file_path)][frames_range[0]:frames_range[1]]
 
     @abstractmethod
