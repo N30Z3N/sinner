@@ -40,6 +40,30 @@ class BaseImageWriter(ABC, metaclass=SingletonABCMeta):
     def _get_write_params(self) -> list[int]:
         pass
 
+    @property
+    def quality(self) -> int:
+        """
+        Унифицированный параметр качества (0-100)
+        Для JPEG: прямое качество изображения
+        Для PNG: инвертированный уровень сжатия (100 = без сжатия)
+        """
+        return self._get_quality()
+
+    @quality.setter
+    def quality(self, value: int) -> None:
+        value = max(0, min(100, value))
+        self._set_quality(value)
+
+    @abstractmethod
+    def _get_quality(self) -> int:
+        """Получить унифицированное значение качества"""
+        pass
+
+    @abstractmethod
+    def _set_quality(self, value: int) -> None:
+        """Установить унифицированное значение качества"""
+        pass
+
     @classmethod
     def create(cls, _format: str = 'png', quality: int = None) -> T:
         """
@@ -60,13 +84,11 @@ class BaseImageWriter(ABC, metaclass=SingletonABCMeta):
 
         if _format.lower() == 'png':
             writer = PNGWriter()
-            if quality is not None:
-                writer.compression_level = quality
             return writer
         elif _format.lower() in ['jpg', 'jpeg']:
             writer = JPEGWriter()
-            if quality is not None:
-                writer.quality = quality
-            return writer
         else:
             raise ValueError(f"Неподдерживаемый формат изображения: {format}")
+        if quality is not None:
+            writer.quality = quality
+        return writer

@@ -13,3 +13,9 @@ class JPEGWriter(BaseImageWriter):
 
     def _get_write_params(self) -> list[int]:
         return [cv2.IMWRITE_JPEG_QUALITY, self.quality]
+
+    def _get_quality(self) -> int:
+        return self.quality
+
+    def _set_quality(self, value: int) -> None:
+        self.quality = value

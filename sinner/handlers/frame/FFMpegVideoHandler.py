@@ -60,9 +60,9 @@ class FFMpegVideoHandler(BaseFrameHandler):
         super().__init__(target_path, parameters)
         match self.format:
             case 'png':
-                self.ffmpeg_quality_parameter = ['-compression_level', str(self.quality)]
+                self.ffmpeg_quality_parameter = ['-compression_level', str(self._writer.quality)]
             case 'jpg':
-                self.ffmpeg_quality_parameter = ['-compression_level', str(round(31 - (self.quality / 100 * 30)))]
+                self.ffmpeg_quality_parameter = ['-compression_level', str(round(31 - (self._writer.quality / 100 * 30)))]
 
     @property
     def fps(self) -> float:
