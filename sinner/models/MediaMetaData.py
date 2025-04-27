@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Tuple, Dict, Any
+from typing import Tuple, Dict, Any, Optional
 
 
 @dataclass
@@ -11,6 +11,8 @@ class MediaMetaData:
     render_resolution: Tuple[int, int] = (0, 0)  # The resolution, frame rendered with
     fps: float = 0  # Frames per second, 0 as infinite value
     frames_count: int = 0  # Total number of frames
+    image_format: str = 'png'  # Intermediate frame format
+    image_quality: Optional[int] = None  # Quality/compression level for image
 
     @property
     def length(self) -> float:
@@ -71,5 +73,7 @@ class MediaMetaData:
             "render_resolution": self.render_resolution,
             "resolution": self.resolution,
             "fps": self.fps,
-            "frames_count": self.frames_count
+            "frames_count": self.frames_count,
+            "image_format": self.image_format,
+            "image_quality": self.image_quality
         }
