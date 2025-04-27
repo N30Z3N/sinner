@@ -140,7 +140,7 @@ class FrameDirectoryBuffer(FrameBufferInterface):
 
     def get_indices(self) -> List[int]:
         with self._indices_lock:
-            return self._indices
+            return self._indices.copy()  # prevents change of internal list from outside
 
     def add_index(self, index: int) -> None:
         """Adds index internally. Introduced for remote processing"""
