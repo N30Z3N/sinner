@@ -20,8 +20,8 @@ class BaseFrameHandler(AttributeLoader, ABC):
     _resolution: tuple[int, int] | None = None
     _length: float | None = None
 
-    format: str
-    quality: Optional[int]
+    _format: str
+    _quality: Optional[int]
 
     _writer: BaseImageWriter
 
@@ -29,14 +29,14 @@ class BaseFrameHandler(AttributeLoader, ABC):
         return [
             {
                 'parameter': ['image-format', 'format', 'save-format'],
-                'attribute': 'format',
+                'attribute': '_format',
                 'default': 'png',
                 'choices': ['png', 'jpg'],
                 'help': 'Format of intermediate frames files'
             },
             {
                 'parameter': ['image-quality', 'quality', 'save-quality'],
-                'attribute': 'quality',
+                'attribute': '_quality',
                 'default': None,  # will be set in init()
                 'help': 'Quality level for jpeg files or compression level for png files'
             },
@@ -62,7 +62,7 @@ class BaseFrameHandler(AttributeLoader, ABC):
     def __init__(self, target_path: str, parameters: Namespace):
         self._target_path = str(normalize_path(target_path))
         super().__init__(parameters)
-        self._writer = BaseImageWriter.create(self.format, self.quality)
+        self._writer = BaseImageWriter.create(self._format, self._quality)
         # app_logger.info(f"Handle frames for {self._target_path} ({self.fc} frame(s)/{self.fps} FPS)")
 
     @property
@@ -97,6 +97,14 @@ class BaseFrameHandler(AttributeLoader, ABC):
         if self._length is None:
             self._length = self.fc / self.fps
         return self._length
+
+    @property
+    def format(self) -> str:
+        return self._format
+
+    @property
+    def quality(self) -> Optional[int]:
+        return self._quality
 
     def get_frames_paths(self, path: str, frames_range: tuple[int | None, int | None] = (None, None)) -> List[NumeratedFramePath]:
         """

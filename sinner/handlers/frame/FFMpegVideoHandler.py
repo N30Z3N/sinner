@@ -58,7 +58,7 @@ class FFMpegVideoHandler(BaseFrameHandler):
         if not self.available():
             raise Exception('ffmpeg is not installed. Install it or use --frame-handler=cv2')
         super().__init__(target_path, parameters)
-        match self.format:
+        match self._format:
             case 'png':
                 self.ffmpeg_quality_parameter = ['-compression_level', str(self._writer.quality)]
             case 'jpg':
