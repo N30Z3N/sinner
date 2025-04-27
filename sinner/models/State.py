@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Optional
 
 from sinner.AppLogger import app_logger
 from sinner.handlers.writers.BaseImageWriter import BaseImageWriter
-from sinner.handlers.writers.JPEGHandler import JPEGWriter
-from sinner.handlers.writers.PNGHandler import PNGWriter
+from sinner.handlers.writers.JPEGWriter import JPEGWriter
+from sinner.handlers.writers.PNGWriter import PNGWriter
 from sinner.helpers.FrameHelper import EmptyFrame
 from sinner.models.NumberedFrame import NumberedFrame
 from sinner.utilities import is_absolute_path, format_sequences, path_exists, is_file, normalize_path, get_file_name

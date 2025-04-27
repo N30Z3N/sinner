@@ -2,7 +2,7 @@ from abc import abstractmethod
 
 import numpy
 
-from sinner.handlers.writers.PNGHandler import PNGWriter
+from sinner.handlers.writers.PNGWriter import PNGWriter
 from sinner.typing import Frame
 
 SWP_NOMOVE = 0x0002

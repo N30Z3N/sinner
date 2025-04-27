@@ -5,8 +5,8 @@ import pytest
 from pathlib import Path
 
 from sinner.handlers.writers.BaseImageWriter import BaseImageWriter
-from sinner.handlers.writers.JPEGHandler import JPEGWriter
-from sinner.handlers.writers.PNGHandler import PNGWriter
+from sinner.handlers.writers.JPEGWriter import JPEGWriter
+from sinner.handlers.writers.PNGWriter import PNGWriter
 from sinner.helpers import FrameHelper
 from tests.constants import tmp_dir, source_jpg
 
