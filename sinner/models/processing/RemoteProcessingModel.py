@@ -8,6 +8,7 @@ from typing import Callable, Any, Optional
 from sinner.AppLogger import app_logger
 from sinner.gui.controls.FramePlayer.PygameFramePlayer import PygameFramePlayer
 from sinner.gui.controls.ProgressIndicator.BaseProgressIndicator import BaseProgressIndicator
+from sinner.handlers.writers.BaseImageWriter import BaseImageWriter
 from sinner.server.FrameProcessingClient import FrameProcessingClient
 from sinner.server.api.messages.NotificationMessage import NotificationMessage
 from sinner.server.api.ZMQClientAPI import ZMQClientAPI
@@ -129,7 +130,11 @@ class RemoteProcessingModel(AttributeLoader, ProcessingModelInterface):
             self.ProcessingClient.target_path = self._target_path
 
         # Set up the timeline and player
-        self.TimeLine = FrameTimeLine(temp_dir=self.temp_dir, buffer_size=self._buffer_size).load(source_name=self._source_path, target_name=self._target_path, frame_time=self.metadata.frame_time, start_frame=1, end_frame=self.metadata.frames_count)
+        self.TimeLine = FrameTimeLine(
+            temp_dir=self.temp_dir,
+            buffer_size=self._buffer_size,
+            writer=BaseImageWriter.create(self.metadata.image_format, self.metadata.image_quality)
+        ).load(source_name=self._source_path, target_name=self._target_path, frame_time=self.metadata.frame_time, start_frame=1, end_frame=self.metadata.frames_count)
         self.Player = PygameFramePlayer(width=self.metadata.resolution[0], height=self.metadata.resolution[1], caption='sinner distributed player', on_close_event=on_close_event)
 
         # Initialize audio if enabled
