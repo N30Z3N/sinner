@@ -3,6 +3,7 @@ import threading
 from pathlib import Path
 from typing import List, Optional, ClassVar, Self
 
+from sinner.handlers.writers.BaseImageWriter import BaseImageWriter
 from sinner.helpers.FrameHelper import write_to_image, read_from_image
 from sinner.models.NumberedFrame import NumberedFrame
 from sinner.models.framebuffer.FrameBufferInterface import FrameBufferInterface
@@ -20,11 +21,13 @@ class FrameDirectoryBuffer(FrameBufferInterface):
     _path: Optional[str] = None
     _indices: List[int] = []
     _indices_lock: threading.RLock
+    _writer: BaseImageWriter
 
     _loaded: bool = False  # flag to check if source & target names are loaded
 
-    def __init__(self, temp_dir: str):
+    def __init__(self, temp_dir: str, writer: Optional[BaseImageWriter] = None):
         self.temp_dir = temp_dir
+        self._writer = writer if writer else BaseImageWriter.create()
         self._indices_lock = threading.RLock()  # RLock позволяет повторно получать блокировку тем же потоком
 
     def load(self, source_name: str, target_name: str, frames_count: int) -> Self:
@@ -80,9 +83,9 @@ class FrameDirectoryBuffer(FrameBufferInterface):
     #  Returns a processed file name for an unprocessed frame index
     def get_frame_processed_name(self, frame: NumberedFrame) -> str:
         if frame.name:
-            filename = frame.name + '.png'
+            filename = frame.name + self._writer.extension
         else:
-            filename = str(frame.index).zfill(self.zfill_length) + '.png'
+            filename = str(frame.index).zfill(self.zfill_length) + self._writer.extension
         return str(os.path.join(self.path, filename))
 
     def clean(self) -> None:
@@ -103,7 +106,7 @@ class FrameDirectoryBuffer(FrameBufferInterface):
         if not self._loaded:  # not loaded
             return None
         if self.has_index(index):
-            filename = str(index).zfill(self.zfill_length) + '.png'
+            filename = str(index).zfill(self.zfill_length) + self._writer.extension
             filepath = str(os.path.join(self.path, filename))
             try:
                 self._miss = 0
@@ -113,7 +116,7 @@ class FrameDirectoryBuffer(FrameBufferInterface):
         elif return_previous:
             for previous_number in range(index - 1, 0, -1):
                 if self.has_index(previous_number):
-                    previous_filename = str(previous_number).zfill(self.zfill_length) + '.png'
+                    previous_filename = str(previous_number).zfill(self.zfill_length) + self._writer.extension
                     previous_file_path = os.path.join(self.path, previous_filename)
                     if path_exists(previous_file_path):
                         try:
@@ -132,7 +135,7 @@ class FrameDirectoryBuffer(FrameBufferInterface):
             self._indices = []
             with os.scandir(self.path) as entries:
                 for entry in entries:
-                    if entry.is_file() and entry.name.endswith(".png"):
+                    if entry.is_file() and entry.name.endswith(self._writer.extension):
                         self._indices.append(int(get_file_name(entry.name)))
 
     def get_indices(self) -> List[int]:
