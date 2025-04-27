@@ -83,7 +83,7 @@ def test_swap_frames_to_mp4() -> None:
 def test_swap_images() -> None:
     assert os.path.exists(source_images_result) is False
     original_images_names = [get_file_name(filepath) for filepath in glob.glob(os.path.join(images_dir, '*.jpg'))]
-    params = Parameters(f'--target-path="{images_dir}" --source-path="{source_jpg}" --execution-treads={threads_count}')
+    params = Parameters(f'--target-path="{images_dir}" --source-path="{source_jpg}" --execution-treads={threads_count} --format=jpg')
     limit_resources(suggest_max_memory())
     BatchProcessingCore(parameters=params.parameters).run()
     assert os.path.exists(source_images_result) is True
