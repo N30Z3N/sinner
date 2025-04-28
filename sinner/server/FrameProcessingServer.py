@@ -8,6 +8,7 @@ from typing import Dict, List, Optional
 
 from sinner.AppLogger import app_logger
 from sinner.BatchProcessingCore import BatchProcessingCore
+from sinner.handlers.writers.BaseImageWriter import BaseImageWriter
 from sinner.server.api.messages.NotificationMessage import NotificationMessage
 
 from sinner.server.api.messages.RequestMessage import RequestMessage
@@ -167,7 +168,11 @@ class FrameProcessingServer(AttributeLoader):
         if self.bootstrap_processors:
             self._processors = self.processors
 
-        self.TimeLine = FrameTimeLine(temp_dir=self.temp_dir, buffer_size=self._buffer_size)
+        self.TimeLine = FrameTimeLine(
+            temp_dir=self.temp_dir,
+            buffer_size=self._buffer_size,
+            writer=BaseImageWriter.create(self.frame_handler.format, self.frame_handler.quality)
+        )
         self._event_processing = Event()
         self._event_rewind = Event()
 
@@ -230,7 +235,9 @@ class FrameProcessingServer(AttributeLoader):
                     render_resolution=(int(self.frame_handler.resolution[0] * self._scale_quality / 100), int(self.frame_handler.resolution[1] * self._scale_quality / 100)),
                     resolution=self.frame_handler.resolution,
                     fps=self.frame_handler.fps,
-                    frames_count=self.frame_handler.fc
+                    frames_count=self.frame_handler.fc,
+                    image_format=self.frame_handler.format,
+                    image_quality=self.frame_handler.quality
                 )
             case request.GET_PREPARE_FRAMES:
                 return ResponseMessage.ok_response(message="Prepare frames", value=self._prepare_frames)

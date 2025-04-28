@@ -103,7 +103,14 @@ class FrameProcessingClient:
     def metadata(self) -> MediaMetaData:
         response: ResponseMessage = self._APIClient.send_request(RequestMessage(RequestMessage.GET_METADATA))
         if response.is_ok():
-            return MediaMetaData(resolution=response.resolution, fps=response.fps, frames_count=response.frames_count, render_resolution=response.render_resolution)
+            return MediaMetaData(
+                resolution=response.resolution,
+                fps=response.fps,
+                frames_count=response.frames_count,
+                render_resolution=response.render_resolution,
+                image_format=response.format,
+                image_quality=response.quality
+            )
         else:
             return MediaMetaData()
 

@@ -27,11 +27,12 @@ result_target_png: str = os.path.join(data_targets_dir, 'result-target.png')  # 
 source_target_mp4: str = os.path.join(data_targets_dir, 'source-target.mp4')  # auto result name for video swap
 result_target_mp4: str = os.path.join(data_targets_dir, 'result-target.mp4')  # auto result name for video processing
 source_images_result: str = resolve_relative_path('data/source-images', __file__)  # auto result name for images swap
-result_frames: str = resolve_relative_path('data/result-frames', __file__)  # auto result name for frames processing
-source_frames: str = resolve_relative_path('data/source-frames', __file__)  # auto result name for frames swap
+result_frames: str = resolve_relative_path('data/frames/result-png', __file__)  # auto result name for frames processing
+source_frames: str = resolve_relative_path('data/frames/source-png', __file__)  # auto result name for frames swap
 tmp_dir: str = resolve_relative_path('temp', get_app_dir())
 
-state_frames_dir: str = resolve_relative_path('data/frames', __file__)
+state_frames_dir: str = resolve_relative_path('data/frames/png', __file__)
+state_frames_jpg_dir: str = resolve_relative_path('data/frames/jpg', __file__)
 images_dir: str = resolve_relative_path('data/images', __file__)
 result_mp4: str = os.path.join(tmp_dir, 'result.mp4')
 result_png: str = os.path.join(tmp_dir, 'result.png')

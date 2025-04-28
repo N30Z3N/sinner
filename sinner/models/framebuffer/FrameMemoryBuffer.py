@@ -5,7 +5,7 @@ from typing import Dict, Self, Optional, Any
 import psutil
 
 from sinner.AppLogger import app_logger
-from sinner.helpers.FrameHelper import write_to_image
+from sinner.handlers.writers.BaseImageWriter import BaseImageWriter
 from sinner.models.NumberedFrame import NumberedFrame
 from sinner.models.framebuffer.FrameDirectoryBuffer import FrameDirectoryBuffer
 
@@ -16,7 +16,7 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
     Provides the same API as FrameDirectoryBuffer with improved performance through in-memory caching.
     """
 
-    def __init__(self, temp_dir: str, buffer_size: int = 128 * 1024 * 1024, remove_earlier_frames: bool = False):
+    def __init__(self, temp_dir: str, buffer_size: int = 128 * 1024 * 1024, remove_earlier_frames: bool = False, writer: Optional[BaseImageWriter] = None):
         """
         Initialize a memory buffer with disk storage.
 
@@ -25,7 +25,7 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
             buffer_size: Maximum memory buffer size in bytes. Set to 0 to disable memory buffer completely.
             remove_earlier_frames: If True, when a frame is requested, all frames with lower indices will be removed from memory
         """
-        super().__init__(temp_dir)
+        super().__init__(temp_dir, writer)
         self._buffer_size: int = buffer_size
         self._memory_buffer: Dict[int, NumberedFrame] = {}
         self._buffer_lock: threading.RLock = threading.RLock()
@@ -73,7 +73,7 @@ class FrameMemoryBuffer(FrameDirectoryBuffer):
         try:
             frame_path = self.get_frame_processed_name(frame)
 
-            if not write_to_image(frame.frame, frame_path):
+            if not self._writer.write(frame.frame, frame_path):
                 app_logger.error(f"Failed to save frame {frame.index} to disk: {frame_path}")
                 return
 

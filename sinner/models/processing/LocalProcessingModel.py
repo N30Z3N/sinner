@@ -11,6 +11,7 @@ from sinner.BatchProcessingCore import BatchProcessingCore
 from sinner.gui.controls.FramePlayer.PygameFramePlayer import PygameFramePlayer
 from sinner.gui.controls.ProgressIndicator.BaseProgressIndicator import BaseProgressIndicator
 from sinner.handlers.frame.EOutOfRange import EOutOfRange
+from sinner.handlers.writers.BaseImageWriter import BaseImageWriter
 from sinner.models.FrameTimeLine import FrameTimeLine
 from sinner.handlers.frame.BaseFrameHandler import BaseFrameHandler
 from sinner.handlers.frame.DirectoryHandler import DirectoryHandler
@@ -146,7 +147,11 @@ class LocalProcessingModel(AttributeLoader, ProcessingModelInterface):
         if self.bootstrap_processors:
             self._processors = self.processors
 
-        self.TimeLine = FrameTimeLine(temp_dir=self.temp_dir, buffer_size=self._buffer_size).load(source_name=self._source_path, target_name=self._target_path, frame_time=self.metadata.frame_time, start_frame=1, end_frame=self.metadata.frames_count)
+        self.TimeLine = FrameTimeLine(
+            temp_dir=self.temp_dir,
+            buffer_size=self._buffer_size,
+            writer=BaseImageWriter.create(self.metadata.image_format, self.metadata.image_quality)
+        ).load(source_name=self._source_path, target_name=self._target_path, frame_time=self.metadata.frame_time, start_frame=1, end_frame=self.metadata.frames_count)
         self.Player = PygameFramePlayer(width=self.metadata.resolution[0], height=self.metadata.resolution[1], caption='sinner player', on_close_event=on_close_event)
 
         if self._enable_sound:
@@ -306,7 +311,9 @@ class LocalProcessingModel(AttributeLoader, ProcessingModelInterface):
                 render_resolution=(int(self.frame_handler.resolution[0] * self._scale_quality / 100), int(self.frame_handler.resolution[1] * self._scale_quality / 100)),
                 resolution=self.frame_handler.resolution,
                 fps=self.frame_handler.fps,
-                frames_count=self.frame_handler.fc
+                frames_count=self.frame_handler.fc,
+                image_format=self.frame_handler.format,
+                image_quality=self.frame_handler.quality
             )
         return self.MetaData
 

@@ -11,7 +11,7 @@ from tqdm import tqdm
 from sinner.AppLogger import app_logger
 from sinner.handlers.frame.BaseFrameHandler import BaseFrameHandler
 from sinner.handlers.frame.EOutOfRange import EOutOfRange
-from sinner.helpers.FrameHelper import write_to_image, read_from_image
+from sinner.helpers.FrameHelper import read_from_image
 from sinner.models.NumberedFrame import NumberedFrame
 from sinner.typing import NumeratedFramePath, Frame
 from sinner.utilities import get_file_name, is_file, get_mem_usage, suggest_max_memory
@@ -21,6 +21,7 @@ from sinner.validators.AttributeLoader import Rules
 class CV2VideoHandler(BaseFrameHandler):
     output_fps: float
     max_memory: int
+    memory_usage: bool
 
     _statistics: dict[str, int] = {'mem_rss_max': 0, 'mem_vms_max': 0, 'limits_reaches': 0}
 
@@ -34,6 +35,11 @@ class CV2VideoHandler(BaseFrameHandler):
             {
                 'parameter': 'max-memory',  # key defined in Sin, but class can be called separately in tests
                 'default': suggest_max_memory(),
+            },
+            {
+                'parameter': 'memory-usage',
+                'default': False,
+                'help': 'Enables memory usage display'
             },
             {
                 'module_help': 'The video processing module, based on CV2 library'
@@ -77,7 +83,8 @@ class CV2VideoHandler(BaseFrameHandler):
     def get_frames_paths(self, path: str, frames_range: tuple[int | None, int | None] = (None, None)) -> List[NumeratedFramePath]:
         def write_done(future_: Future[bool]) -> None:
             futures.remove(future_)
-            progress.set_postfix(self.get_postfix(len(futures)))
+            if self.memory_usage:
+                progress.set_postfix(self.get_postfix(len(futures)))
             progress.update()
 
         start = frames_range[0] if frames_range[0] is not None else 0
@@ -105,12 +112,13 @@ class CV2VideoHandler(BaseFrameHandler):
                     ret, frame = capture.read()
                     if not ret:
                         break
-                    filename: str = os.path.join(path, str(frame_index).zfill(filename_length) + ".png")
+                    filename: str = os.path.join(path, str(frame_index).zfill(filename_length) + self._writer.extension)
                     # Submit only the write_to_image function to the executor, excluding it processing time from the loop
-                    future: Future[bool] = executor.submit(write_to_image, frame, filename)
+                    future: Future[bool] = executor.submit(self._writer.write, frame, filename)
                     future.add_done_callback(write_done)
                     futures.append(future)
-                    progress.set_postfix(self.get_postfix(len(futures)))
+                    if self.memory_usage:
+                        progress.set_postfix(self.get_postfix(len(futures)))
                     future_to_frame[future] = frame_index  # Keep track of which frame the future corresponds to
                     if get_mem_usage('vms', 'g') >= self.max_memory:
                         futures[:1][0].result()
@@ -126,7 +134,7 @@ class CV2VideoHandler(BaseFrameHandler):
 
                 capture.release()
 
-        frames_path = sorted(glob.glob(os.path.join(glob.escape(path), '*.png')))
+        frames_path = sorted(glob.glob(os.path.join(glob.escape(path), f'*{self._writer.extension}')))
         return [(int(get_file_name(file_path)), file_path) for file_path in frames_path if is_file(file_path)]
 
     def get_mem_usage(self) -> str:
@@ -168,7 +176,7 @@ class CV2VideoHandler(BaseFrameHandler):
             app_logger.info('Sound copying is not supported in CV2VideoHandler')
         try:
             Path(os.path.dirname(filename)).mkdir(parents=True, exist_ok=True)
-            frame_files = glob.glob(os.path.join(glob.escape(from_dir), '*.png'))
+            frame_files = glob.glob(os.path.join(glob.escape(from_dir), f'*{self._writer.extension}'))
             first_frame = read_from_image(frame_files[0])
             height, width, channels = first_frame.shape
             fourcc = self.suggest_codec()

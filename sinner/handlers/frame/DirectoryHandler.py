@@ -10,7 +10,7 @@ from sinner.handlers.frame.EOutOfRange import EOutOfRange
 from sinner.helpers.FrameHelper import read_from_image
 from sinner.models.NumberedFrame import NumberedFrame
 from sinner.typing import NumeratedFramePath
-from sinner.utilities import is_image, get_file_name, path_exists, is_dir
+from sinner.utilities import get_file_name, path_exists, is_dir
 from sinner.validators.AttributeLoader import Rules
 
 
@@ -46,11 +46,7 @@ class DirectoryHandler(BaseFrameHandler):
     @property
     def fc(self) -> int:
         if self._fc is None:
-            image_count = 0
-            for file in os.scandir(self._target_path):
-                if is_image(file.path):
-                    image_count += 1
-            self._fc = image_count
+            self._fc = sum(1 for file in os.scandir(self._target_path) if file.is_file() and file.name.lower().endswith(self._writer.extension))
         return self._fc
 
     @fc.setter
@@ -67,7 +63,7 @@ class DirectoryHandler(BaseFrameHandler):
 
     def get_frames_paths(self, path: str, frames_range: tuple[int | None, int | None] = (None, None)) -> List[NumeratedFramePath]:
         if self._frames_path is None:
-            self._frames_path = sorted((file_path for file_path in glob.glob(os.path.join(glob.escape(self._target_path), '*.*')) if is_image(file_path)))
+            self._frames_path = sorted((file_path for file_path in glob.glob(os.path.join(glob.escape(self._target_path), f'*{self._writer.extension}'))))
         start_frame = frames_range[0] if frames_range[0] is not None else 0
         if frames_range[1] is None:
             stop_frame = self.fc

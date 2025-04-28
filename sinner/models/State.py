@@ -1,10 +1,11 @@
 import os
 from argparse import Namespace
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from sinner.AppLogger import app_logger
-from sinner.helpers.FrameHelper import write_to_image, EmptyFrame
+from sinner.handlers.writers.BaseImageWriter import BaseImageWriter
+from sinner.helpers.FrameHelper import EmptyFrame
 from sinner.models.NumberedFrame import NumberedFrame
 from sinner.utilities import is_absolute_path, format_sequences, path_exists, is_file, normalize_path, get_file_name
 from sinner.validators.AttributeLoader import Rules, AttributeLoader
@@ -13,6 +14,8 @@ from sinner.validators.AttributeLoader import Rules, AttributeLoader
 class State(AttributeLoader):
     source_path: str | None = None
     initial_target_path: str | None = None
+    format: str
+    quality: Optional[int]
 
     _target_path: str | None = None
     _path: str | None = None
@@ -20,6 +23,7 @@ class State(AttributeLoader):
     processor_name: str
     _temp_dir: str
     _zfill_length: int | None
+    _writer: BaseImageWriter
 
     final_check_state: bool = True
     final_check_empty: bool = True
@@ -38,6 +42,19 @@ class State(AttributeLoader):
                 'filter': lambda: normalize_path(self.initial_target_path)
             },
             {
+                'parameter': ['image-format', 'format', 'save-format'],
+                'attribute': 'format',
+                'default': 'png',
+                'choices': ['png', 'jpg'],
+                'help': 'Format of intermediate frames files'
+            },
+            {
+                'parameter': ['image-quality', 'quality', 'save-quality'],
+                'attribute': 'quality',
+                'default': None,  # will be set in init()
+                'help': 'Quality level for jpeg files or compression level for png files'
+            },
+            {
                 'module_help': 'The state control module'
             }
         ]
@@ -49,13 +66,15 @@ class State(AttributeLoader):
         self.frames_count = frames_count
         self.processor_name = processor_name
         self._zfill_length = None
+        self._writer = BaseImageWriter.create(self.format, self.quality)
+
         state: List[Dict[str, Any]] = [
             {"Source": getattr(self, "source_path", "None")},
             {"Target": self.target_path},
             {"Temporary dir": self.temp_dir}
         ]
         state_string = "\n".join([f"\t{key}: {value}" for dict_line in state for key, value in dict_line.items()])
-        app_logger.info(f'The processing state:\n{state_string}')
+        app_logger.debug(f'The processing state:\n{state_string}')
 
     @property
     def temp_dir(self) -> str:
@@ -104,7 +123,7 @@ class State(AttributeLoader):
         self.make_path(self._path)
 
     def save_temp_frame(self, frame: NumberedFrame) -> None:
-        if not write_to_image(frame.frame, self.get_frame_processed_name(frame)):
+        if not self._writer.write(frame.frame, self.get_frame_processed_name(frame)):
             raise Exception(f"Error saving frame: {self.get_frame_processed_name(frame)}")
 
     #  Checks if some frame already processed
@@ -119,19 +138,19 @@ class State(AttributeLoader):
 
     @property
     def processed_frames(self) -> List[str]:
-        png_files = []
+        img_files = []
         with os.scandir(self.path) as entries:
             for entry in entries:
-                if entry.is_file() and entry.name.endswith(".png"):
-                    png_files.append(entry.path)
-        return png_files
+                if entry.is_file() and entry.name.endswith(self._writer.extension):
+                    img_files.append(entry.path)
+        return img_files
 
     @property
     def processed_frames_indices(self) -> List[int]:
         indices = []
         with os.scandir(self.path) as entries:
             for entry in entries:
-                if entry.is_file() and entry.name.endswith(".png"):
+                if entry.is_file() and entry.name.endswith(self._writer.extension):
                     indices.append((int(get_file_name(entry.name))))
         return indices
 
@@ -148,9 +167,9 @@ class State(AttributeLoader):
     #  Returns a processed file name for an unprocessed frame index
     def get_frame_processed_name(self, frame: NumberedFrame) -> str:
         if frame.name:
-            filename = frame.name + '.png'
+            filename = frame.name + self._writer.extension
         else:
-            filename = str(frame.index).zfill(self.zfill_length) + '.png'
+            filename = str(frame.index).zfill(self.zfill_length) + self._writer.extension
         return str(os.path.join(self.path, filename))
 
     @property

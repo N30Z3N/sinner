@@ -2,8 +2,9 @@ import glob
 import os
 from abc import ABC, abstractmethod
 from argparse import Namespace
-from typing import List, Self
+from typing import List, Self, Optional
 
+from sinner.handlers.writers.BaseImageWriter import BaseImageWriter
 from sinner.models.NumberedFrame import NumberedFrame
 from sinner.validators.AttributeLoader import Rules, AttributeLoader
 from sinner.typing import NumeratedFramePath
@@ -19,8 +20,26 @@ class BaseFrameHandler(AttributeLoader, ABC):
     _resolution: tuple[int, int] | None = None
     _length: float | None = None
 
+    _format: str
+    _quality: Optional[int]
+
+    _writer: BaseImageWriter
+
     def rules(self) -> Rules:
         return [
+            {
+                'parameter': ['image-format', 'format', 'save-format'],
+                'attribute': '_format',
+                'default': 'png',
+                'choices': ['png', 'jpg'],
+                'help': 'Format of intermediate frames files'
+            },
+            {
+                'parameter': ['image-quality', 'quality', 'save-quality'],
+                'attribute': '_quality',
+                'default': None,  # will be set in init()
+                'help': 'Quality level for jpeg files or compression level for png files'
+            },
         ]
 
     @staticmethod
@@ -43,6 +62,7 @@ class BaseFrameHandler(AttributeLoader, ABC):
     def __init__(self, target_path: str, parameters: Namespace):
         self._target_path = str(normalize_path(target_path))
         super().__init__(parameters)
+        self._writer = BaseImageWriter.create(self._format, self._quality)
         # app_logger.info(f"Handle frames for {self._target_path} ({self.fc} frame(s)/{self.fps} FPS)")
 
     @property
@@ -78,6 +98,14 @@ class BaseFrameHandler(AttributeLoader, ABC):
             self._length = self.fc / self.fps
         return self._length
 
+    @property
+    def format(self) -> str:
+        return self._format
+
+    @property
+    def quality(self) -> Optional[int]:
+        return self._quality
+
     def get_frames_paths(self, path: str, frames_range: tuple[int | None, int | None] = (None, None)) -> List[NumeratedFramePath]:
         """
         Returns all frames paths (extracting them into files, if needed). File names starting from zero index
@@ -85,7 +113,7 @@ class BaseFrameHandler(AttributeLoader, ABC):
         :param frames_range: sets the range of returned (and extracted) frames
         :return: list of requested frames
         """
-        frames_path = sorted(glob.glob(os.path.join(glob.escape(path), '*.png')))
+        frames_path = sorted(glob.glob(os.path.join(glob.escape(path), f'*{self._writer.extension}')))
         return [(int(get_file_name(file_path)), file_path) for file_path in frames_path if is_file(file_path)][frames_range[0]:frames_range[1]]
 
     @abstractmethod

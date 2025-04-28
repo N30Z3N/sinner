@@ -130,6 +130,7 @@ def tests_iterator() -> None:
 
 
 def test_respect_filenames() -> None:
+    parameters.format = 'jpg'
     test_object: DirectoryHandler = DirectoryHandler(parameters=parameters, target_path=images_dir)
     assert isinstance(test_object, Iterator)
     assert 3 == len(test_object.get_frames_paths(path=tmp_dir))

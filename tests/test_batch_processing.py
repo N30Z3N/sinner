@@ -83,7 +83,7 @@ def test_swap_frames_to_mp4() -> None:
 def test_swap_images() -> None:
     assert os.path.exists(source_images_result) is False
     original_images_names = [get_file_name(filepath) for filepath in glob.glob(os.path.join(images_dir, '*.jpg'))]
-    params = Parameters(f'--target-path="{images_dir}" --source-path="{source_jpg}" --execution-treads={threads_count}')
+    params = Parameters(f'--target-path="{images_dir}" --source-path="{source_jpg}" --execution-treads={threads_count} --format=jpg')
     limit_resources(suggest_max_memory())
     BatchProcessingCore(parameters=params.parameters).run()
     assert os.path.exists(source_images_result) is True
@@ -152,7 +152,7 @@ def test_set_execution_provider(capsys) -> None:
 
 
 def test_reprocess_lost_frames() -> None:
-    case_temp_dir = resolve_relative_path('temp/DummyProcessor/frames/source.jpg', get_app_dir())
+    case_temp_dir = resolve_relative_path('temp/DummyProcessor/png/source.jpg', get_app_dir())
     assert os.path.exists(case_temp_dir) is False
     params = Parameters(f'--target-path="{state_frames_dir}" --source-path="{source_jpg}" --output-path="{result_mp4}" --execution-treads={threads_count}')
 

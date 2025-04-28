@@ -29,26 +29,6 @@ def test_read_from_image() -> None:
     assert 2789640 == image.size
 
 
-def test_save_to_image() -> None:
-    file_path = os.path.join(tmp_dir, 'save.png')
-    assert not os.path.exists(file_path)
-    image = FrameHelper.create((10, 15))
-    assert FrameHelper.write_to_image(image, file_path) is True
-    assert os.path.exists(file_path)
-    assert os.path.getsize(file_path) == 97
-
-
-def test_save_to_image_copy() -> None:
-    file_path = os.path.join(tmp_dir, os.path.basename(target_png))
-    print(file_path)  # for CI
-    assert not os.path.exists(file_path)
-    image = FrameHelper.read_from_image(target_png)
-    assert 2789640 == image.size
-    assert FrameHelper.write_to_image(image, file_path) is True
-    assert os.path.exists(file_path)
-    assert os.path.getsize(file_path) == 1499926
-
-
 def test_scale() -> None:
     test_frame = FrameHelper.create((10, 15))
     resized_frame = FrameHelper.scale(test_frame, 10)
